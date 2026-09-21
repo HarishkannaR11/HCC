@@ -78,11 +78,12 @@ See `docs/build-plan.md` for the task breakdown of each phase.
   is pending before running it mid-phase.
 
 ## Node version
-- supabase-js builds a Realtime client on `createClient`, which needs a global
-  `WebSocket`. Node 22+ has one; Node 20 does not and throws at startup.
-- `.npmrc` sets `node-options=--experimental-websocket` so npm scripts work on
-  Node 20. **Next.js route handlers in Phase 1 will hit the same throw**, so
-  upgrading to Node 22 LTS is the durable fix.
+- **Requires Node 22 LTS or later** (`engines.node` in package.json).
+  supabase-js builds a Realtime client on `createClient`, which needs a
+  global `WebSocket`; Node 22 has one built in, Node 20 does not and throws
+  at startup (route handlers would hit the same throw, not just scripts).
+- Node 20 could limp along behind `--experimental-websocket`, but that was a
+  workaround, not a fix — dropped once the project moved to Node 22.
 
 ## Conventions
 - Build sequentially. Finish and verify a phase before starting the next.
