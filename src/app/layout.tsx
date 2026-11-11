@@ -28,8 +28,8 @@ const sourceSerif = Source_Serif_4({
 });
 
 export const metadata: Metadata = {
-  title: "Chartwise",
-  description: "Practice HCC medical coding against synthetic charts.",
+  title: { default: "Chartwise", template: "%s · Chartwise" },
+  description: "Risk adjustment coding practice on synthetic charts.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
