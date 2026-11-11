@@ -15,10 +15,15 @@ export interface EncoderState {
   attemptId: string | null;
   /** Database time the attempt started, in ms. */
   startedAt: number | null;
+  /** Chosen before the attempt starts; fixed once it has. */
+  mode: AttemptMode;
+  /** Set by the database for timed attempts. */
+  timeLimitSeconds: number | null;
   assigned: AssignedCode[];
   evidence: EvidenceLink[];
 
-  setAttempt: (attemptId: string, startedAt: number) => void;
+  setAttempt: (attempt: { attemptId: string; startedAt: number; mode: AttemptMode; timeLimitSeconds: number | null }) => void;
+  chooseMode: (mode: AttemptMode) => void;
   add: (option: CodeOption) => void;
   remove: (code: string) => void;
   setRationale: (code: string, rationale: string) => void;
@@ -26,9 +31,13 @@ export interface EncoderState {
   unlinkEvidence: (id: string) => void;
 }
 
+export type AttemptMode = "practice" | "timed";
+
 export interface EncoderInitialState {
   attemptId: string | null;
   startedAt: number | null;
+  mode: AttemptMode;
+  timeLimitSeconds: number | null;
   assigned: AssignedCode[];
   evidence: EvidenceLink[];
 }
@@ -40,7 +49,8 @@ export function createEncoderStore(initial: EncoderInitialState) {
   return createStore<EncoderState>((set) => ({
     ...initial,
 
-    setAttempt: (attemptId, startedAt) => set({ attemptId, startedAt }),
+    setAttempt: (attempt) => set(attempt),
+    chooseMode: (mode) => set((s) => (s.attemptId ? s : { mode })),
     // Claim order matters to the engine only for labelling which code owns a
     // shared HCC; it never changes the total.
     add: (option) =>

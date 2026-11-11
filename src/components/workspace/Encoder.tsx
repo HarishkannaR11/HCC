@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from
 import { saveDraft, startAttempt, submitAttempt } from "@/app/practice/[chartId]/actions";
 import type { EncoderChart } from "@/lib/practice/types";
 import type { HierarchyRef } from "@/lib/scoring/reference";
+import { useStore as useEncoderStore } from "zustand";
 import { createEncoderStore, evidenceId, trayPayload } from "@/lib/workspace/store";
 import { locateEvidence } from "@/lib/workspace/resume";
 import type { AssignedCode } from "@/lib/workspace/types";
@@ -19,6 +20,8 @@ const SAVE_DEBOUNCE_MS = 700;
 export interface EncoderResume {
   attemptId: string | null;
   startedAt: string | null;
+  mode: "practice" | "timed";
+  timeLimitSeconds: number | null;
   assigned: AssignedCode[];
   /** Saved supporting excerpt per code, to rebuild highlights. */
   excerpts: Record<string, string>;
@@ -46,6 +49,8 @@ export function Encoder({
     return createEncoderStore({
       attemptId: resume.attemptId,
       startedAt: resume.startedAt ? Date.parse(resume.startedAt) : null,
+      mode: resume.mode,
+      timeLimitSeconds: resume.timeLimitSeconds,
       assigned: resume.assigned,
       evidence: resume.assigned.flatMap((a) => locateEvidence(paragraphs, a.code, resume.excerpts[a.code] ?? "", evidenceId)),
     });
@@ -72,13 +77,18 @@ export function Encoder({
   const ensureAttempt = useCallback(async (): Promise<string | null> => {
     const existing = store.getState().attemptId;
     if (existing) return existing;
-    attemptPromise.current ??= startAttempt(chart.id).then((result) => {
+    attemptPromise.current ??= startAttempt({ chartId: chart.id, mode: store.getState().mode }).then((result) => {
       if ("error" in result) {
         attemptPromise.current = null;
         setSubmitError(result.error);
         return null;
       }
-      store.getState().setAttempt(result.attemptId, Date.parse(result.startedAt));
+      store.getState().setAttempt({
+        attemptId: result.attemptId,
+        startedAt: Date.parse(result.startedAt),
+        mode: result.mode,
+        timeLimitSeconds: result.timeLimitSeconds,
+      });
       return result.attemptId;
     });
     return attemptPromise.current;
@@ -114,21 +124,45 @@ export function Encoder({
     if (saveTimer.current) clearTimeout(saveTimer.current);
   }, []);
 
-  const submit = useCallback(() => {
-    const { assigned } = store.getState();
-    if (assigned.length === 0 || submitting) return;
-    const count = `${assigned.length} code${assigned.length === 1 ? "" : "s"}`;
-    if (!window.confirm(`Submit ${count} for scoring? The answer key is shown once you submit.`)) return;
-    setSubmitError(null);
-    if (saveTimer.current) clearTimeout(saveTimer.current);
-    startSubmit(async () => {
-      const attemptId = await ensureAttempt();
-      if (!attemptId) return;
-      // On success the action redirects to the result screen.
-      const result = await submitAttempt({ attemptId, codes: trayPayload(store.getState()) });
-      if (result?.error) setSubmitError(result.error);
-    });
-  }, [store, submitting, ensureAttempt]);
+  const autoSubmitted = useRef(false);
+  const submit = useCallback(
+    (options: { auto?: boolean } = {}) => {
+      const { assigned } = store.getState();
+      if (assigned.length === 0 || submitting) return;
+      const count = `${assigned.length} code${assigned.length === 1 ? "" : "s"}`;
+      if (!options.auto && !window.confirm(`Submit ${count} for scoring? The answer key is shown once you submit.`)) return;
+      setSubmitError(null);
+      if (saveTimer.current) clearTimeout(saveTimer.current);
+      startSubmit(async () => {
+        const attemptId = await ensureAttempt();
+        if (!attemptId) return;
+        // On success the action redirects to the result screen.
+        const result = await submitAttempt({
+          attemptId,
+          codes: trayPayload(store.getState()),
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        });
+        if (result?.error) setSubmitError(result.error);
+      });
+    },
+    [store, submitting, ensureAttempt],
+  );
+
+  // Timed mode: when the database-clocked limit runs out, submit what is there.
+  const attemptId = useEncoderStore(store, (s) => s.attemptId);
+  const startedAt = useEncoderStore(store, (s) => s.startedAt);
+  const timeLimitSeconds = useEncoderStore(store, (s) => s.timeLimitSeconds);
+  useEffect(() => {
+    if (!attemptId || startedAt === null || timeLimitSeconds === null) return;
+    const remaining = startedAt + timeLimitSeconds * 1000 - Date.now();
+    const timer = setTimeout(() => {
+      if (autoSubmitted.current) return;
+      autoSubmitted.current = true;
+      if (store.getState().assigned.length > 0) submit({ auto: true });
+      else setSubmitError("Time is up. Assign at least one code to submit; the attempt will be marked over time.");
+    }, Math.max(0, remaining));
+    return () => clearTimeout(timer);
+  }, [attemptId, startedAt, timeLimitSeconds, store, submit]);
 
   // Ctrl/Cmd + Enter submits from anywhere on the screen.
   useEffect(() => {
@@ -145,7 +179,7 @@ export function Encoder({
   return (
     <EncoderContext.Provider value={context}>
       <div className="flex h-dvh flex-col overflow-hidden bg-bg text-ink">
-        <EncoderTopBar chart={chart} nextChartId={nextChartId} />
+        <EncoderTopBar chart={chart} nextChartId={nextChartId} onStartTimed={() => void ensureAttempt()} />
 
         <div role="tablist" aria-label="Coding screen panes" className="flex shrink-0 border-b border-border bg-surface lg:hidden">
           {(["chart", "codes"] as const).map((key) => (
@@ -173,7 +207,7 @@ export function Encoder({
             }`}
           >
             <CodeSearch />
-            <AssignedTray onSubmit={submit} submitting={submitting} error={submitError} saveStatus={saveStatus} />
+            <AssignedTray onSubmit={() => submit()} submitting={submitting} error={submitError} saveStatus={saveStatus} />
           </div>
         </div>
       </div>

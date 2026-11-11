@@ -156,6 +156,7 @@ export type Database = {
           mode: Database["public"]["Enums"]["attempt_mode"];
           started_at: string;
           submitted_at: string | null;
+          time_limit_seconds: number | null;
           user_id: string;
         };
         ComputedFields: never;
@@ -166,6 +167,7 @@ export type Database = {
           mode?: Database["public"]["Enums"]["attempt_mode"];
           started_at?: string;
           submitted_at?: string | null;
+          time_limit_seconds?: number | null;
           user_id?: string;
         };
         Update: {
@@ -175,6 +177,7 @@ export type Database = {
           mode?: Database["public"]["Enums"]["attempt_mode"];
           started_at?: string;
           submitted_at?: string | null;
+          time_limit_seconds?: number | null;
           user_id?: string;
         };
         Relationships: [
@@ -540,6 +543,7 @@ export type Database = {
           full_name: string | null;
           id: string;
           role: Database["public"]["Enums"]["app_role"];
+          timezone: string;
         };
         ComputedFields: never;
         Insert: {
@@ -547,12 +551,14 @@ export type Database = {
           full_name?: string | null;
           id: string;
           role?: Database["public"]["Enums"]["app_role"];
+          timezone?: string;
         };
         Update: {
           created_at?: string;
           full_name?: string | null;
           id?: string;
           role?: Database["public"]["Enums"]["app_role"];
+          timezone?: string;
         };
         Relationships: [];
       };
@@ -622,10 +628,12 @@ export type Database = {
           p_attempt_id: string;
           p_codes: Json;
           p_result: Json;
+          p_timezone: string;
           p_user_id: string;
         };
         Returns: string;
       };
+      timed_limit_seconds: { Args: { p_difficulty: number }; Returns: number };
     };
     Enums: {
       app_role: "learner" | "admin";

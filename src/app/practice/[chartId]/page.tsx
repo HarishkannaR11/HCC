@@ -31,6 +31,8 @@ export default async function EncoderPage({ params }: PageProps<"/practice/[char
   const resume: EncoderResume = {
     attemptId: open?.id ?? null,
     startedAt: open?.startedAt ?? null,
+    mode: open?.mode ?? "practice",
+    timeLimitSeconds: open?.timeLimitSeconds ?? null,
     assigned: (open?.codes ?? []).flatMap((c) => {
       const info = saved.get(c.code);
       return info ? [{ code: c.code, description: info.description, hccs: info.hccs, rationale: c.rationale }] : [];

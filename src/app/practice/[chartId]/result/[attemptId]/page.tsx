@@ -47,7 +47,7 @@ export default async function ResultPage({ params }: PageProps<"/practice/[chart
   const { data: attempt } = await db
     .from("attempts")
     .select(
-      "id, chart_id, submitted_at, duration_seconds, attempt_results(score_pct, breakdown), attempt_codes(icd10_code, supporting_excerpt, user_rationale), charts(title)",
+      "id, chart_id, mode, time_limit_seconds, submitted_at, duration_seconds, attempt_results(score_pct, breakdown), attempt_codes(icd10_code, supporting_excerpt, user_rationale), charts(title)",
     )
     .eq("id", attemptId)
     .eq("user_id", user.id)
@@ -97,7 +97,13 @@ export default async function ResultPage({ params }: PageProps<"/practice/[chart
             <h1 className="m-0 mt-1 text-xl font-semibold">{attempt.charts?.title ?? "Chart"}</h1>
             <p className="m-0 mt-1 text-[13px] text-muted">
               PY{b.paymentYear} · CMS-HCC V28 · patient {b.patient.age} y {b.patient.sex}
-              {attempt.duration_seconds !== null ? ` · ${formatDuration(attempt.duration_seconds)} on this chart` : ""}
+              {attempt.mode === "timed" && attempt.time_limit_seconds !== null && attempt.duration_seconds !== null
+                ? attempt.duration_seconds <= attempt.time_limit_seconds
+                  ? ` · Timed: ${formatDuration(attempt.duration_seconds)} of ${formatDuration(attempt.time_limit_seconds)}`
+                  : ` · Timed: over the ${formatDuration(attempt.time_limit_seconds)} limit by ${formatDuration(attempt.duration_seconds - attempt.time_limit_seconds)}`
+                : attempt.duration_seconds !== null
+                  ? ` · ${formatDuration(attempt.duration_seconds)} on this chart`
+                  : ""}
             </p>
           </div>
           <div className="flex items-center gap-3">

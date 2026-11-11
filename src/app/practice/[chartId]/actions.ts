@@ -37,35 +37,56 @@ function normalise(entries: { code: string; excerpt: string; rationale: string }
   return codes;
 }
 
-/** Open (or resume) this learner's attempt on a chart. started_at comes from the database clock. */
-export async function startAttempt(chartId: unknown): Promise<{ attemptId: string; startedAt: string } | Failure> {
+export interface StartedAttempt {
+  attemptId: string;
+  startedAt: string;
+  mode: "practice" | "timed";
+  timeLimitSeconds: number | null;
+}
+
+const startSchema = z.object({ chartId: z.uuid(), mode: z.enum(["practice", "timed"]).default("practice") });
+
+/**
+ * Open (or resume) this learner's attempt on a chart. started_at comes from
+ * the database clock and a timed attempt's limit from the database, so
+ * neither can be chosen by the learner. An open attempt keeps its mode.
+ */
+export async function startAttempt(input: unknown): Promise<StartedAttempt | Failure> {
   const user = await getSessionUser();
   if (!user) return { error: "Your session has expired. Sign in again." };
-  const id = z.uuid().safeParse(chartId);
-  if (!id.success) return { error: "Invalid chart." };
+  const parsed = startSchema.safeParse(input);
+  if (!parsed.success) return { error: "Invalid chart." };
+  const id = { data: parsed.data.chartId };
+  const started = (row: { id: string; started_at: string; mode: string; time_limit_seconds: number | null }): StartedAttempt => ({
+    attemptId: row.id,
+    startedAt: row.started_at,
+    mode: row.mode === "timed" ? "timed" : "practice",
+    timeLimitSeconds: row.time_limit_seconds,
+  });
 
   const db = await createClient();
+  const columns = "id, started_at, mode, time_limit_seconds";
   const existing = await db
     .from("attempts")
-    .select("id, started_at")
+    .select(columns)
     .eq("user_id", user.id)
     .eq("chart_id", id.data)
     .is("submitted_at", null)
     .maybeSingle();
-  if (existing.data) return { attemptId: existing.data.id, startedAt: existing.data.started_at };
+  if (existing.data) return started(existing.data);
 
   const { data, error } = await db
     .from("attempts")
-    .insert({ user_id: user.id, chart_id: id.data, mode: "practice" })
-    .select("id, started_at")
+    .insert({ user_id: user.id, chart_id: id.data, mode: parsed.data.mode })
+    .select(columns)
     .single();
   if (error?.code === "23505") {
     // Another tab opened it first: use that one.
-    const again = await db.from("attempts").select("id, started_at").eq("user_id", user.id).eq("chart_id", id.data).is("submitted_at", null).single();
-    if (again.data) return { attemptId: again.data.id, startedAt: again.data.started_at };
+    const again = await db.from("attempts").select(columns).eq("user_id", user.id).eq("chart_id", id.data).is("submitted_at", null).single();
+    if (again.data) return started(again.data);
   }
   if (error || !data) return { error: "This chart is not available for practice." };
-  return { attemptId: data.id, startedAt: data.started_at };
+  return started(data);
 }
 
 /** Save the tray as it stands. RLS limits this to the learner's own open attempt. */
@@ -160,6 +181,8 @@ export async function submitAttempt(input: unknown): Promise<Failure> {
   const { error } = await service.rpc("submit_scored_attempt", {
     p_attempt_id: attemptId,
     p_user_id: user.id,
+    // Validated again in SQL against pg_timezone_names; unknown zones fall back to UTC.
+    p_timezone: parsed.data.timezone,
     p_codes: submitted.map((code) => ({
       icd10_code: code,
       supporting_excerpt: codes.get(code)!.excerpt,

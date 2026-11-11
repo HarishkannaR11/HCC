@@ -72,6 +72,12 @@ export const saveDraftSchema = z.object({
 /** What the encoder submits. Validated by the submit Server Action. */
 export const submitAttemptSchema = z.object({
   attemptId: z.uuid(),
+  /** The browser's IANA time zone: decides which local day the submission counts towards. */
+  timezone: z
+    .string()
+    .max(64)
+    .regex(/^[A-Za-z0-9_+\-/]+$/)
+    .catch("UTC"),
   codes: z
     .array(codeEntry)
     .min(1, "Assign at least one code before submitting.")
@@ -79,3 +85,10 @@ export const submitAttemptSchema = z.object({
 });
 
 export type SubmitAttemptInput = z.input<typeof submitAttemptSchema>;
+
+/**
+ * Timed-mode limits by chart difficulty, for display before an attempt starts.
+ * The database sets the real limit (timed_limit_seconds() in migration 0010);
+ * keep these two in step.
+ */
+export const TIMED_LIMIT_SECONDS: Record<number, number> = { 1: 600, 2: 900, 3: 1200 };

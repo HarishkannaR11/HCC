@@ -136,6 +136,8 @@ export function mappingsFor(codes: Map<string, CodeOption>): Map<string, CodeMap
 export interface OpenAttempt {
   id: string;
   startedAt: string;
+  mode: "practice" | "timed";
+  timeLimitSeconds: number | null;
   codes: { code: string; excerpt: string; rationale: string }[];
 }
 
@@ -143,7 +145,7 @@ export interface OpenAttempt {
 export async function loadOpenAttempt(db: Db, userId: string, chartId: string): Promise<OpenAttempt | null> {
   const { data } = await db
     .from("attempts")
-    .select("id, started_at, attempt_codes(icd10_code, supporting_excerpt, user_rationale)")
+    .select("id, started_at, mode, time_limit_seconds, attempt_codes(icd10_code, supporting_excerpt, user_rationale)")
     .eq("user_id", userId)
     .eq("chart_id", chartId)
     .is("submitted_at", null)
@@ -152,6 +154,8 @@ export async function loadOpenAttempt(db: Db, userId: string, chartId: string): 
   return {
     id: data.id,
     startedAt: data.started_at,
+    mode: data.mode === "timed" ? "timed" : "practice",
+    timeLimitSeconds: data.time_limit_seconds,
     codes: data.attempt_codes.map((c) => ({
       code: c.icd10_code,
       excerpt: c.supporting_excerpt ?? "",

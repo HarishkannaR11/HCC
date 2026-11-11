@@ -434,6 +434,7 @@ describe("the practice loop (Phase 2)", () => {
     const own = await users.otherLearner.client.rpc("submit_scored_attempt", {
       p_attempt_id: openAttemptId,
       p_user_id: users.otherLearner.id,
+      p_timezone: "America/New_York",
       p_codes: [{ icd10_code: "E11.22" }],
       p_result: { captured: ["HCC37"], missed: [], over_coded: [], precision: 1, recall: 1, raf_user: 1, raf_key: 1, raf_delta: 0, score_pct: 100 },
     });
@@ -446,6 +447,7 @@ describe("the practice loop (Phase 2)", () => {
     const submitted = await service.rpc("submit_scored_attempt", {
       p_attempt_id: openAttemptId,
       p_user_id: users.otherLearner.id,
+      p_timezone: "America/New_York",
       p_codes: [{ icd10_code: "E11.22", supporting_excerpt: "diabetic CKD", user_rationale: "" }],
       p_result: {
         captured: ["HCC37"],
@@ -478,6 +480,7 @@ describe("the practice loop (Phase 2)", () => {
     const again = await service.rpc("submit_scored_attempt", {
       p_attempt_id: openAttemptId,
       p_user_id: users.otherLearner.id,
+      p_timezone: "America/New_York",
       p_codes: [],
       p_result: { captured: [], missed: [], over_coded: [], precision: 1, recall: 1, raf_user: 0, raf_key: 0, raf_delta: 0, score_pct: 100 },
     });
@@ -489,6 +492,43 @@ describe("the practice loop (Phase 2)", () => {
     expect(key.data ?? []).toEqual([]);
     const distractors = await users.otherLearner.client.from("distractors").select("*").eq("chart_id", publishedChartId);
     expect(distractors.data ?? []).toEqual([]);
+  });
+});
+
+describe("progress and timed mode (Phase 3)", () => {
+  it("sets a timed attempt's limit in the database, from the chart's difficulty", async () => {
+    const timed = await users.learner.client
+      .from("attempts")
+      .insert({ chart_id: publishedChartId, user_id: users.learner.id, mode: "timed" })
+      .select("mode, time_limit_seconds")
+      .single();
+    expect(timed.error).toBeNull();
+    expect(timed.data).toEqual({ mode: "timed", time_limit_seconds: 600 }); // difficulty 1
+
+    const forged = await users.otherLearner.client
+      .from("attempts")
+      .insert({ chart_id: draftChartId, user_id: users.otherLearner.id, mode: "timed", time_limit_seconds: 99999 });
+    expect(forged.error?.code).toBe("42501");
+  });
+
+  it("refuses audit mode until it exists", async () => {
+    const audit = await users.sneaky.client.from("attempts").insert({ chart_id: publishedChartId, user_id: users.sneaky.id, mode: "audit" });
+    expect(audit.error?.code).toBe("22023");
+  });
+
+  it("counts a submission towards the learner's own local day, and remembers their zone", async () => {
+    const today = new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
+    const { data } = await users.otherLearner.client.from("daily_activity").select("activity_date, charts_completed");
+    expect(data).toEqual([{ activity_date: today, charts_completed: 1 }]);
+    const { data: profile } = await users.otherLearner.client.from("profiles").select("timezone").eq("id", users.otherLearner.id).single();
+    expect(profile?.timezone).toBe("America/New_York");
+  });
+
+  it("lets no learner write activity or their own zone", async () => {
+    const write = await users.learner.client.from("daily_activity").insert({ user_id: users.learner.id, activity_date: "2025-01-01", charts_completed: 99 });
+    expect(write.error?.code).toBe("42501");
+    const zone = await users.learner.client.from("profiles").update({ timezone: "Asia/Tokyo" }).eq("id", users.learner.id);
+    expect(zone.error?.code).toBe("42501");
   });
 });
 
