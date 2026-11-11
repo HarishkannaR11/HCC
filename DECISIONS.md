@@ -78,6 +78,7 @@ reasoning each. Newest phase at the bottom.
 - **Spec consequence, kept as written:** precision is 1 when the denominator is 0, so a submission with no HCCs at all scores 30%. Tune `SCORE_WEIGHTS` or the rule if that is too generous.
 - **Optional key codes (`is_required = false`) are set aside entirely.** They are never a miss, never an over-code, and stay out of both RAFs.
 - **A code-level review sits alongside the HCC score** (correct / optional / planted trap / not on the key / missed). Non-HCC specificity errors (I10 vs I12.9) are taught even though they cannot move the score. It also records the traps hit and avoided for Phase 3's weakness breakdown.
+- **V28's HCC223 rule is encoded** (`src/lib/hcc/model-rules.ts`). Heart assist device / artificial heart counts only alongside another heart-failure HCC (221, 222, 224, 225 or 226); otherwise it is dropped before trimming and suppresses nothing. A device status code coded alone (Z95.811) therefore captures no HCC, rather than a spurious 2.505. Source: the V28 model logic as reimplemented in public model code, matching the Phase 1 note. Confirm against the CMS SAS macro when the official package is loaded.
 - **Patient age follows Phase 1's decision: whole years at the encounter.** CMS's software applies its edits at age on Feb 1 of the payment year. The two differ only within a year of an edit boundary (e.g. breast cancer at 50); flagged for review.
 
 ### Storage and security

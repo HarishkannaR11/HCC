@@ -9,6 +9,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { buildReference, sourceFileNames, type ReferenceRelease, type SourceFiles } from "../../../../scripts/lib/reference-build";
 import { SEED_CHARTS } from "../../../../scripts/seed/charts";
+import { requirementsFor } from "@/lib/hcc/model-rules";
 import { ageOn } from "@/lib/hcc/resolve";
 import type { ReferenceSlice } from "@/lib/hcc/types";
 import { reviewCodes } from "../review";
@@ -41,6 +42,7 @@ function toSlice(release: ReferenceRelease): ReferenceSlice {
       ]),
     ),
     suppressions: release.hcc_hierarchy.map((h) => ({ category: hccNumber(h.parent), suppressed: hccNumber(h.child) })),
+    requirements: requirementsFor(release.hcc_model_version),
   };
 }
 

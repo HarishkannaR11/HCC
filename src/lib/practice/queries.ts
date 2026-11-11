@@ -63,7 +63,8 @@ export async function loadEncoderChart(db: Db, chartId: string): Promise<Encoder
 
 /** Every HCC and suppression pair for a payment year — public reference data. */
 export async function loadHierarchy(db: Db, paymentYear: number): Promise<HierarchyRef> {
-  const [{ data: categories, error: catError }, { data: pairs, error: pairError }] = await Promise.all([
+  const [{ data: year }, { data: categories, error: catError }, { data: pairs, error: pairError }] = await Promise.all([
+    db.from("payment_years").select("hcc_model_version").eq("year", paymentYear).maybeSingle(),
     db
       .from("hcc_categories")
       .select("id, hcc_code, label, hierarchy_group, raf_community_nondual")
@@ -74,8 +75,10 @@ export async function loadHierarchy(db: Db, paymentYear: number): Promise<Hierar
   if (pairError) throw new Error(`Loading the HCC hierarchy failed: ${pairError.message}`);
 
   const numberById = new Map(categories.map((c) => [c.id, hccNumber(c.hcc_code)]));
+  if (!year) throw new Error(`Payment year ${paymentYear} is not loaded.`);
   return {
     paymentYear,
+    modelVersion: year.hcc_model_version,
     hccs: categories
       .map((c) => ({
         number: hccNumber(c.hcc_code),

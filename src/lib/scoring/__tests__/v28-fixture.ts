@@ -1,3 +1,4 @@
+import { requirementsFor } from "@/lib/hcc/model-rules";
 import type { ReferenceSlice } from "@/lib/hcc/types";
 
 /**
@@ -11,6 +12,7 @@ const MAPPINGS: [string, number, string | null][] = [
   ["N18.30", 329, null], ["N18.31", 329, null], ["N18.32", 328, null], ["N18.4", 327, null], ["N18.5", 326, null],
   ["J44.9", 280, null], ["J44.1", 280, null],
   ["I11.0", 226, null], ["I50.22", 226, null], ["I50.23", 224, null], ["I42.0", 227, null],
+  ["Z95.811", 223, null], ["I50.84", 222, null],
   ["I48.19", 238, null], ["I48.91", 238, null],
   ["C50.912", 23, null], ["M06.9", 93, null], ["Z89.511", 409, null], ["F33.1", 155, null],
   ["C50.011", 22, "age < 50"], ["C50.011", 23, "age >= 50"],
@@ -23,6 +25,8 @@ const WEIGHTS: [number, string, number][] = [
   [38, "Diabetes with Glycemic, Unspecified, or No Complications", 0.166],
   [93, "Rheumatoid Arthritis and Other Specified Inflammatory Rheumatic Disorders", 0.617],
   [155, "Major Depression, Moderate or Severe, without Psychosis", 0.299],
+  [222, "End-Stage Heart Failure", 2.505],
+  [223, "Heart Failure with Heart Assist Device/Artificial Heart", 2.505],
   [224, "Acute on Chronic Heart Failure", 0.36],
   [226, "Heart Failure, Except End-Stage and Acute", 0.36],
   [227, "Cardiomyopathy/Myocarditis", 0.189],
@@ -36,7 +40,10 @@ const WEIGHTS: [number, string, number][] = [
 ];
 
 const SUPPRESSIONS: [number, number][] = [
-  [22, 23], [37, 38], [224, 226], [224, 227], [226, 227],
+  [22, 23], [37, 38],
+  [222, 223], [222, 224], [222, 225], [222, 226], [222, 227],
+  [223, 224], [223, 225], [223, 226], [223, 227],
+  [224, 225], [224, 226], [224, 227], [225, 226], [225, 227], [226, 227],
   [326, 327], [326, 328], [326, 329], [327, 328], [327, 329], [328, 329],
 ];
 
@@ -51,5 +58,6 @@ export function v28Fixture(): ReferenceSlice {
     })),
     weights: new Map(WEIGHTS.map(([category, label, rafWeight]) => [category, { category, label, family: "", rafWeight }])),
     suppressions: SUPPRESSIONS.map(([category, suppressed]) => ({ category, suppressed })),
+    requirements: requirementsFor("V28"),
   };
 }

@@ -86,6 +86,16 @@ export function computeCapturedRaf(
   // Suppression is judged against every HCC present on the chart, not only the
   // ones still counting. The hierarchy is stored fully expanded, so this is
   // already transitive: HCC326 lists 327, 328 and 329 directly.
+  // Model requirements (V28: HCC223 needs another HF HCC) come before the
+  // hierarchy: a dropped HCC neither scores nor suppresses anything.
+  const droppedBy = new Map<number, string>();
+  for (const rule of reference.requirements ?? []) {
+    if (ownerOf.has(rule.hcc) && !rule.requiresAnyOf.some((hcc) => ownerOf.has(hcc))) {
+      droppedBy.set(rule.hcc, rule.reason);
+    }
+  }
+  for (const hcc of droppedBy.keys()) ownerOf.delete(hcc);
+
   const present = new Set(ownerOf.keys());
   const suppressorOf = new Map<number, number>();
   for (const pair of reference.suppressions) {
@@ -112,7 +122,8 @@ export function computeCapturedRaf(
         );
       }
 
-      const excludedByEdit = failingEdit(mapping, patient);
+      // A failed CMS edit, or a model requirement that dropped this HCC.
+      const excludedByEdit = failingEdit(mapping, patient) ?? droppedBy.get(mapping.hccCategory) ?? null;
       const owner = ownerOf.get(mapping.hccCategory);
       const duplicateOf = excludedByEdit === null && owner !== undefined && owner !== code ? owner : null;
       const suppressedBy =

@@ -127,6 +127,37 @@ describe("scoreAttempt — hierarchy trimming", () => {
   });
 });
 
+describe("scoreAttempt — V28 HCC223 requirement", () => {
+  it("drops HCC223 when no other heart failure HCC is present (device status alone)", () => {
+    const result = score(["Z95.811"], required("Z95.811"));
+    expect(result.user.hccs).toEqual([]);
+    expect(result.noHccImpact).toEqual(["Z95.811"]);
+    expect(result.user.codes[0].mappings[0].excludedByEdit).toMatch(/HCC223 counts only with another heart failure HCC/);
+    expect(result.key.raf).toBe(0);
+  });
+
+  it("keeps HCC223 alongside heart failure, where it then suppresses HCC226", () => {
+    const result = score(["Z95.811", "I50.22"], required("Z95.811", "I50.22"));
+    expect(result.key.hccs).toEqual([223]);
+    expect(result.key.trimmed).toEqual([{ hcc: 226, suppressedBy: 223 }]);
+    expect(result.key.raf).toBe(2.505);
+    expect(result.scorePct).toBe(100);
+  });
+
+  it("counts a missed heart failure code twice over: HCC223 falls away with it", () => {
+    // Key: device + HF -> {223}. Learner codes the device only -> {} (223 dropped).
+    const result = score(["Z95.811"], required("Z95.811", "I50.22"));
+    expect(result.missed).toEqual([223]);
+    expect(result.user.raf).toBe(0);
+  });
+
+  it("leaves HCC223 alone under 221/222, which suppress it anyway", () => {
+    const result = score(["Z95.811", "I50.84"], required("Z95.811", "I50.84"));
+    expect(result.key.hccs).toEqual([222]);
+    expect(result.key.trimmed).toEqual([{ hcc: 223, suppressedBy: 222 }]);
+  });
+});
+
 describe("scoreAttempt — edges", () => {
   it("reports codes with no HCC separately, not as errors", () => {
     const result = score(["E11.22", "N18.31", "J44.9", "I10", "E78.5"], CHART1_KEY);

@@ -3,6 +3,7 @@
  * server (scoring) and the browser (the encoder's running total), so both
  * resolve codes against identical data.
  */
+import { requirementsFor } from "@/lib/hcc/model-rules";
 import type { ReferenceSlice } from "@/lib/hcc/types";
 
 /** One HCC category for a payment year. */
@@ -17,6 +18,8 @@ export interface HccRef {
 /** The year-wide part of the reference: every HCC and every suppression pair. */
 export interface HierarchyRef {
   paymentYear: number;
+  /** e.g. "V28"; selects model rules such as V28's HCC223 requirement. */
+  modelVersion: string;
   hccs: HccRef[];
   /** [suppressor, suppressed] HCC numbers, exactly as CMS publishes them. */
   suppressions: [number, number][];
@@ -48,5 +51,6 @@ export function buildReferenceSlice(
       hierarchy.hccs.map((h) => [h.number, { category: h.number, label: h.label, family: h.group, rafWeight: h.raf }]),
     ),
     suppressions: hierarchy.suppressions.map(([category, suppressed]) => ({ category, suppressed })),
+    requirements: requirementsFor(hierarchy.modelVersion),
   };
 }

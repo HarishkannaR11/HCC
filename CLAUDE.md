@@ -58,7 +58,8 @@ India to US customers, so no US-entity requirement).
 - Hierarchy: within a family a more severe HCC suppresses a milder one. V28 is
   **not** always a chain (HCC180 > 182 and 180 > 253, but 182 and 253 are
   incomparable), so use the pairs table, judged against the pre-trim set.
-- V28 HCC223 counts only alongside another HF HCC: confirm and encode in Phase 2.
+- V28 HCC223 counts only alongside another HF HCC (221/222/224/225/226): encoded
+  in `src/lib/hcc/model-rules.ts`, applied before trimming.
 - Some codes change HCC by age/sex (C50.912: HCC22 <50, HCC23 ≥50).
 
 ## Build order
