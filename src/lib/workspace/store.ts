@@ -1,74 +1,78 @@
 /**
- * Workspace state: claimed codes, evidence links, mode, and search controls.
+ * Encoder state: the open attempt, assigned codes and evidence links.
  *
- * Zustand over useReducer: five components (TopBar, ChartPane, CodeSearch,
- * ClaimedPanel, plus the page shell) all need slices of this state with no
- * parent-child relationship between most of them, and Zustand's hook
- * subscribes each reader to only the fields it selects — a reducer would need
- * context plus manual memoized selectors to avoid re-rendering every pane on
- * every keystroke in the search box.
+ * One store per mounted encoder (created in <Encoder> and passed through
+ * context), so moving from one chart to the next can never carry codes across.
+ * Zustand rather than a reducer because the chart pane, search box and tray
+ * each subscribe to different slices and should not re-render together.
  */
-import { create } from "zustand";
-import type { EvidenceLink, MeatElement, PracticeMode } from "./types";
+import { createStore } from "zustand/vanilla";
+import type { CodeOption } from "@/lib/practice/types";
+import { EXCERPT_SEPARATOR, type AssignedCode, type EvidenceLink } from "./types";
 
-interface WorkspaceState {
-  mode: PracticeMode;
-  setMode: (mode: PracticeMode) => void;
+export interface EncoderState {
+  /** Null until the first code is assigned; then the server-side attempt. */
+  attemptId: string | null;
+  /** Database time the attempt started, in ms. */
+  startedAt: number | null;
+  assigned: AssignedCode[];
+  evidence: EvidenceLink[];
 
-  searchQuery: string;
-  setSearchQuery: (query: string) => void;
-  hccOnly: boolean;
-  toggleHccOnly: () => void;
-
-  /** In claim order — first to reach a shared HCC owns it. */
-  claimedCodes: string[];
-  addClaimedCode: (code: string) => void;
-  removeClaimedCode: (code: string) => void;
-
-  evidenceLinks: EvidenceLink[];
-  addEvidenceLink: (link: Omit<EvidenceLink, "id">) => void;
-  removeEvidenceLink: (id: string) => void;
+  setAttempt: (attemptId: string, startedAt: number) => void;
+  add: (option: CodeOption) => void;
+  remove: (code: string) => void;
+  setRationale: (code: string, rationale: string) => void;
+  linkEvidence: (link: Omit<EvidenceLink, "id">) => void;
+  unlinkEvidence: (id: string) => void;
 }
 
-let nextEvidenceId = 0;
-/** Stable, collision-free ids without pulling in a uuid dependency for one call site. */
-function makeEvidenceId(): string {
-  nextEvidenceId += 1;
-  return `evidence-${nextEvidenceId}-${Date.now().toString(36)}`;
+export interface EncoderInitialState {
+  attemptId: string | null;
+  startedAt: number | null;
+  assigned: AssignedCode[];
+  evidence: EvidenceLink[];
 }
 
-export const useWorkspaceStore = create<WorkspaceState>((set) => ({
-  mode: "guided",
-  setMode: (mode) => set({ mode }),
+let nextId = 0;
+export const evidenceId = () => `ev-${(nextId += 1)}-${Date.now().toString(36)}`;
 
-  searchQuery: "",
-  setSearchQuery: (searchQuery) => set({ searchQuery }),
-  hccOnly: false,
-  toggleHccOnly: () => set((state) => ({ hccOnly: !state.hccOnly })),
+export function createEncoderStore(initial: EncoderInitialState) {
+  return createStore<EncoderState>((set) => ({
+    ...initial,
 
-  claimedCodes: [],
-  addClaimedCode: (code) =>
-    set((state) => (state.claimedCodes.includes(code) ? state : { claimedCodes: [...state.claimedCodes, code] })),
-  removeClaimedCode: (code) =>
-    set((state) => ({
-      claimedCodes: state.claimedCodes.filter((c) => c !== code),
-      // Cascade: evidence for a code that's no longer claimed is meaningless.
-      evidenceLinks: state.evidenceLinks.filter((link) => link.codeId !== code),
-    })),
+    setAttempt: (attemptId, startedAt) => set({ attemptId, startedAt }),
+    // Claim order matters to the engine only for labelling which code owns a
+    // shared HCC; it never changes the total.
+    add: (option) =>
+      set((s) =>
+        s.assigned.some((a) => a.code === option.code)
+          ? s
+          : { assigned: [...s.assigned, { code: option.code, description: option.description, hccs: option.hccs, rationale: "" }] },
+      ),
+    remove: (code) =>
+      set((s) => ({
+        assigned: s.assigned.filter((a) => a.code !== code),
+        // Evidence for a code that is no longer assigned means nothing.
+        evidence: s.evidence.filter((e) => e.code !== code),
+      })),
+    setRationale: (code, rationale) =>
+      set((s) => ({ assigned: s.assigned.map((a) => (a.code === code ? { ...a, rationale } : a)) })),
+    linkEvidence: (link) => set((s) => ({ evidence: [...s.evidence, { ...link, id: evidenceId() }] })),
+    unlinkEvidence: (id) => set((s) => ({ evidence: s.evidence.filter((e) => e.id !== id) })),
+  }));
+}
 
-  evidenceLinks: [],
-  addEvidenceLink: (link) =>
-    set((state) => ({ evidenceLinks: [...state.evidenceLinks, { ...link, id: makeEvidenceId() }] })),
-  removeEvidenceLink: (id) =>
-    set((state) => ({ evidenceLinks: state.evidenceLinks.filter((link) => link.id !== id) })),
-}));
+export type EncoderStore = ReturnType<typeof createEncoderStore>;
 
-/** Which MEAT elements have at least one evidence link for `code`. */
-export function meatFlagsFor(evidenceLinks: EvidenceLink[], code: string): Record<MeatElement, boolean> {
-  const flags: Record<MeatElement, boolean> = { M: false, E: false, A: false, T: false };
-  for (const link of evidenceLinks) {
-    if (link.codeId !== code) continue;
-    for (const element of link.meat) flags[element] = true;
-  }
-  return flags;
+/** All evidence for one code, joined for attempt_codes.supporting_excerpt. */
+export function excerptFor(evidence: readonly EvidenceLink[], code: string): string {
+  return evidence
+    .filter((e) => e.code === code)
+    .map((e) => e.text.trim())
+    .join(EXCERPT_SEPARATOR);
+}
+
+/** The tray as the server stores it. */
+export function trayPayload(state: Pick<EncoderState, "assigned" | "evidence">) {
+  return state.assigned.map((a) => ({ code: a.code, excerpt: excerptFor(state.evidence, a.code), rationale: a.rationale }));
 }
