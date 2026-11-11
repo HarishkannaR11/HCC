@@ -97,6 +97,7 @@ export type Database = {
       attempt_results: {
         Row: {
           attempt_id: string;
+          breakdown: NonNullable<Json>;
           captured: string[];
           created_at: string;
           missed: string[];
@@ -111,6 +112,7 @@ export type Database = {
         ComputedFields: never;
         Insert: {
           attempt_id: string;
+          breakdown?: NonNullable<Json>;
           captured?: string[];
           created_at?: string;
           missed?: string[];
@@ -124,6 +126,7 @@ export type Database = {
         };
         Update: {
           attempt_id?: string;
+          breakdown?: NonNullable<Json>;
           captured?: string[];
           created_at?: string;
           missed?: string[];
@@ -599,8 +602,30 @@ export type Database = {
     Functions: {
       icd10_dotted: { Args: { raw: string }; Returns: string };
       is_admin: { Args: Record<PropertyKey, never>; Returns: boolean };
+      search_icd10_codes: {
+        Args: {
+          hcc_only?: boolean;
+          p_payment_year: number;
+          q: string;
+          result_limit?: number;
+        };
+        Returns: {
+          code: string;
+          description: string;
+          hccs: Json;
+        }[];
+      };
       show_limit: { Args: Record<PropertyKey, never>; Returns: number };
       show_trgm: { Args: { "": string }; Returns: string[] };
+      submit_scored_attempt: {
+        Args: {
+          p_attempt_id: string;
+          p_codes: Json;
+          p_result: Json;
+          p_user_id: string;
+        };
+        Returns: string;
+      };
     };
     Enums: {
       app_role: "learner" | "admin";
