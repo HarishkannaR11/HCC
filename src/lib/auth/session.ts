@@ -63,5 +63,5 @@ export async function getAdminOrNull(): Promise<SessionUser | null> {
 
 /** Where a user lands after signing in when no `next` was requested. */
 export function homeFor(role: AppRole): string {
-  return role === "admin" ? "/admin/charts" : "/practice";
+  return role === "admin" ? "/admin/charts" : "/dashboard";
 }

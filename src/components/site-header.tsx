@@ -11,6 +11,9 @@ export function SiteHeader({ user }: { user: SessionUser }) {
         {PRODUCT_NAME}
       </Link>
       <nav className="flex items-center gap-4 text-[13px]">
+        <Link href="/dashboard" className="text-bg/80 hover:text-bg no-underline">
+          Dashboard
+        </Link>
         <Link href="/practice" className="text-bg/80 hover:text-bg no-underline">
           Practice
         </Link>
