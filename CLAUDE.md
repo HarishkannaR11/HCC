@@ -34,39 +34,47 @@ Keep the *code* professional; the motivational layer lives in the product
   linked out to for human reference only.
 
 ## Stack
-- **Next.js (App Router) + TypeScript + Tailwind** — frontend AND backend.
+- **Next.js (App Router) + TypeScript + Tailwind + shadcn/ui + zod** — frontend AND backend.
 - **Supabase**: Postgres (data) + Auth (login/sessions).
-- Scoring logic lives in Next.js **route handlers** (server-side).
+- Scoring logic lives in pure functions (`lib/scoring/`), called server-side.
 - Do NOT add a separate Python/FastAPI service yet. Only extract the scoring
   engine into FastAPI if its logic outgrows a route handler. Flag it first.
 
 ## Hard rules
-1. **Answer keys and scoring never reach the client.** The chart goes to the
-   browser; the submitted codes come back; scoring happens on the server.
-   Never send `expected_codes` in a chart-fetch response.
-2. **Synthetic charts only.** No real patient data, ever. No PHI.
-3. **V28 hierarchy is not optional** in RAF math.
-4. Server-side validation on every input (empty submissions, invalid codes).
+1. **Answer keys never reach the client before submission.** `answer_key_items`
+   and `distractors` have no learner RLS policy; the only read path is
+   `get_attempt_answer_key()` / `get_attempt_distractors()` (own attempt, already
+   submitted). Never select them into a learner page or response.
+2. **Synthetic charts only.** No real patient data, ever, in any environment or
+   fixture. `charts.is_synthetic` must be true (CHECK constraint).
+3. **No CPT codes or descriptors** anywhere: product, database, seeds, copy.
+4. **No AAPC/AHIMA affiliation claims.** "Risk adjustment coding practice" and
+   "aligned to the CRC exam domains" are fine; "official", logos, credentials are not.
+5. **Scoring is deterministic** table lookup. No LLM in the scoring path.
+6. **V28 hierarchy is not optional** in RAF math, and it uses the CMS suppression
+   pairs in `hcc_hierarchy` — not "highest rank in group" (see DECISIONS.md).
+7. Server-side validation (zod) on every input; every Server Action re-checks auth.
+8. Service-role key is server-only (`src/lib/supabase/service.ts`); the build
+   fails if it reaches the client bundle.
 
-## Data model (Postgres)
-- `codes` — icd10_code (PK), description, chapter, is_billable
-- `crosswalk` — icd10_code (FK), hcc_category
-- `hcc_weights` — hcc_category (PK), raf_weight, disease_family
-- `hcc_hierarchy` — hcc_category, suppressed_hcc  (V28 suppression pairs)
-- `charts` — id, title, body (JSONB: hpi, meds, labs, assessment…), difficulty
-- `chart_expected_codes` — chart_id (FK), icd10_code  (the answer key)
-- `attempts` — id, user_id, chart_id, submitted_at, score, raf_captured
-- `attempt_codes` — attempt_id (FK), icd10_code, verdict (correct|missed|extra)
+## Data model (Postgres) — see supabase/migrations/0004_versioned_schema.sql
+- Reference, versioned by `payment_year`: `payment_years`, `icd10_codes`,
+  `hcc_categories` (`raf_community_nondual` = CNA), `hcc_hierarchy` (pairs),
+  `icd_hcc_map` (with CMS age/sex/MCE edits).
+- Content: `charts` (synthetic header, status draft|published), `chart_sections`,
+  `answer_key_items` (trap_type), `distractors` (trap_type).
+- Attempts: `attempts`, `attempt_codes`, `attempt_results` — learners read their
+  own; all writes are server-side.
+- Account: `profiles` (role learner|admin), `subscriptions`, `daily_activity`.
 
-## Build order (one phase at a time — verify before moving on)
-0. Data foundation: parse CMS files into `codes`, `crosswalk`, `hcc_weights`,
-   `hcc_hierarchy`. Nothing else works without this.
-1. Vertical slice: one hardcoded chart → code search → scoring route → result.
-2. Scoring engine: correct / missed / extra + RAF with V28 hierarchy.
-3. Auth + persistence: Supabase login, save attempts, dashboard (streak, accuracy).
-4. Content + modes: chart authoring, difficulty, guided vs exam, daily challenge.
+## Build order (stop after each phase for review)
+1. Foundations — schema, RLS, auth, admin chart CRUD, seeds. (done)
+2. Practice loop — encoder, scoring engine (`lib/scoring/`, tested first), results.
+3. Progress — dashboard, streaks, trap-type weaknesses, timed mode.
+4. Monetisation — free tier, merchant-of-record billing behind `lib/billing`.
+5. Audit mode and hardening.
 
-See `docs/build-plan.md` for the task breakdown of each phase.
+See `docs/build-plan.md` and `DECISIONS.md`.
 
 ## Migrations
 - Schema changes are SQL files in `supabase/migrations/`, numbered `0001_`, `0002_`, ...

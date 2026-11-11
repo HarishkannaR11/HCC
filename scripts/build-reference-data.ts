@@ -11,22 +11,50 @@ import { join } from "node:path";
 import { parseCsvRecords, parseCsv } from "./lib/csv";
 import { formatIcd10, icd10Chapter } from "../src/lib/icd10";
 
-const RAW = join(process.cwd(), "data", "raw");
+/**
+ * One CMS release per payment year. Adding PY2027 means adding its file names
+ * here and re-running the build with --year=2027; nothing downstream changes.
+ */
+const RELEASES = {
+  2026: {
+    hccModelVersion: "V28",
+    sources: {
+      order: "icd10cm-order-2026.txt",
+      mappings: "ICD10_CC_mappings_CMS_HCC_2026_v28.csv",
+      factors: "V28_CE_Relative_Factors.csv",
+      hierarchies: "V28_HCC_Hierarchies.csv",
+      categories: "V28_Diagnosis_Categories.csv",
+    },
+    expectedHccs: 115,
+  },
+} as const;
+
+type PaymentYear = keyof typeof RELEASES;
+
+function selectedYear(): PaymentYear {
+  const flag = process.argv.find((a) => a.startsWith("--year="));
+  const year = Number(flag ? flag.slice("--year=".length) : 2026);
+  if (!(year in RELEASES)) {
+    throw new Error(`No CMS release configured for payment year ${year}. Known: ${Object.keys(RELEASES).join(", ")}`);
+  }
+  return year as PaymentYear;
+}
+
+const PAYMENT_YEAR = selectedYear();
+const RELEASE = RELEASES[PAYMENT_YEAR];
+
+// HCC_RAW_DIR points the parser at another copy of the CMS files (a staging
+// download, a test fixture) without touching data/raw.
+const RAW = process.env.HCC_RAW_DIR ?? join(process.cwd(), "data", "raw");
 const OUT = join(process.cwd(), "data", "processed");
 
-const SOURCES = {
-  order: "icd10cm-order-2026.txt",
-  mappings: "ICD10_CC_mappings_CMS_HCC_2026_v28.csv",
-  factors: "V28_CE_Relative_Factors.csv",
-  hierarchies: "V28_HCC_Hierarchies.csv",
-  categories: "V28_Diagnosis_Categories.csv",
-} as const;
+const SOURCES = RELEASE.sources;
 
 function read(name: string): string {
   try {
     return readFileSync(join(RAW, name), "utf8");
   } catch {
-    throw new Error(`Missing source file data/raw/${name} - see data/README.md`);
+    throw new Error(`Missing source file ${join(RAW, name)} - see data/README.md`);
   }
 }
 
@@ -87,6 +115,8 @@ type WeightRow = {
   hcc_category: number;
   label: string;
   disease_family: string;
+  /** 1 + the number of HCCs that suppress this one. Descriptive; trimming uses the pairs. */
+  hierarchy_rank: number;
   coef_community_na: number | null;
   coef_community_pba: number | null;
   coef_community_fba: number | null;
@@ -96,7 +126,7 @@ type WeightRow = {
   coef_institutional: number | null;
 };
 
-function buildWeights(families: Map<number, string>): WeightRow[] {
+function buildWeights(families: Map<number, string>, hierarchy: HierarchyRow[]): WeightRow[] {
   const records = parseCsvRecords(read(SOURCES.factors));
   const hccRows = records.filter((r) => /^HCC\d+$/.test(r["Variable"] ?? ""));
 
@@ -117,10 +147,15 @@ function buildWeights(families: Map<number, string>): WeightRow[] {
       `HCC${hcc} has no community non-dual aged coefficient`,
     );
 
+    // The hierarchy is stored fully expanded, so counting suppressors gives the
+    // depth in the family: HCC326 (CKD 5) is rank 1, HCC329 (CKD 3) rank 4.
+    const suppressors = hierarchy.filter((pair) => pair.suppressed_hcc === hcc).length;
+
     return {
       hcc_category: hcc,
       label: (r["Label"] ?? "").trim(),
       disease_family: family,
+      hierarchy_rank: 1 + suppressors,
       ...coefficients,
     } as WeightRow;
   });
@@ -327,7 +362,7 @@ function buildCrosswalk(validCodes: Set<string>, validHccs: Set<number>): Crossw
 // --- main -------------------------------------------------------------------
 
 function main() {
-  console.log("Parsing CMS PY2026 V28 reference data...\n");
+  console.log(`Parsing CMS PY${PAYMENT_YEAR} ${RELEASE.hccModelVersion} reference data from ${RAW}...\n`);
 
   const codes = buildCodes();
   console.log(`  codes: ${codes.length} (${codes.filter((c) => c.is_billable).length} billable)`);
@@ -344,10 +379,10 @@ function main() {
   );
 
   const families = deriveFamilies(labels);
-  const weights = buildWeights(families);
+  const hierarchy = buildHierarchy();
+  const weights = buildWeights(families, hierarchy);
   console.log(`  hcc_weights: ${weights.length}`);
 
-  const hierarchy = buildHierarchy();
   console.log(`  hcc_hierarchy: ${hierarchy.length} suppression pairs`);
 
   const validHccs = new Set(weights.map((w) => w.hcc_category));
@@ -360,11 +395,14 @@ function main() {
   const mappedCodes = new Set(crosswalk.map((c) => c.icd10_code));
   console.log(`  crosswalk: ${crosswalk.length} rows over ${mappedCodes.size} distinct codes`);
 
-  assert(weights.length === 115, `expected 115 V28 HCCs, got ${weights.length}`);
+  const expected = RELEASE.expectedHccs;
+  assert(weights.length === expected, `expected ${expected} ${RELEASE.hccModelVersion} HCCs, got ${weights.length}`);
   const mappedHccs = new Set(crosswalk.map((c) => c.hcc_category));
-  assert(mappedHccs.size === 115, `expected all 115 HCCs to be reachable, got ${mappedHccs.size}`);
+  assert(mappedHccs.size === expected, `expected all ${expected} HCCs to be reachable, got ${mappedHccs.size}`);
 
   mkdirSync(OUT, { recursive: true });
+  const meta = { payment_year: PAYMENT_YEAR, hcc_model_version: RELEASE.hccModelVersion };
+  writeFileSync(join(OUT, "meta.json"), JSON.stringify(meta, null, 2), "utf8");
   const tables = { codes, hcc_weights: weights, crosswalk, hcc_hierarchy: hierarchy };
   for (const [name, rows] of Object.entries(tables)) {
     writeFileSync(join(OUT, `${name}.json`), JSON.stringify(rows), "utf8");

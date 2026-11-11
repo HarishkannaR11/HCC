@@ -7,21 +7,33 @@
   },
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "next build && npm run check:bundle",
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "next typegen && tsc --noEmit",
     "data:build": "tsx scripts/build-reference-data.ts",
     "data:load": "tsx scripts/load-reference-data.ts",
-    "data:verify": "tsx scripts/verify-reference-data.ts"
+    "data:verify": "tsx scripts/verify-reference-data.ts",
+    "seed:charts": "tsx scripts/seed-charts.ts",
+    "admin:grant": "tsx scripts/grant-admin.ts",
+    "db:types": "supabase gen types typescript --db-url \"$DATABASE_URL\" --schema public > src/lib/supabase/database.types.ts",
+    "verify:rls": "tsx scripts/verify-rls.ts",
+    "check:bundle": "tsx scripts/check-client-bundle.ts"
   },
   "dependencies": {
+    "@radix-ui/react-slot": "^1.5.0",
+    "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.47.10",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
     "next": "16.3.5",
     "react": "19.2.8",
     "react-dom": "19.2.8",
+    "server-only": "^0.0.1",
+    "tailwind-merge": "^3.7.0",
+    "zod": "^4.6.7",
     "zustand": "^5.0.15"
   },
   "devDependencies": {

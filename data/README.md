@@ -1,15 +1,23 @@
 # Reference data
 
+Every reference table is versioned by `payment_year` (migration 0004). The build
+is configured per year in `RELEASES` in `scripts/build-reference-data.ts`:
+
+    npm run data:build -- --year=2026      # data/raw -> data/processed (HCC_RAW_DIR overrides data/raw)
+    npm run data:load                      # upserts that year; ids stay stable across reloads
+    npm run data:verify                    # hand-checked codes -> HCCs -> RAF weights
+
 `data/raw/` holds the official CMS/CDC source files. It is gitignored: the files
 are large and freely re-downloadable from the URLs below. Nothing here is
 scraped — every file is a direct download from cms.gov or ftp.cdc.gov.
 
 | File | Feeds | Source |
 | --- | --- | --- |
-| `icd10cm-order-2026.txt` | `codes` | CDC FY2026 ICD-10-CM, [icd10cm-Code Descriptions-2026.zip](https://ftp.cdc.gov/pub/Health_Statistics/NCHS/Publications/ICD10CM/2026/) |
-| `ICD10_CC_mappings_CMS_HCC_2026_v28.csv` | `crosswalk` | CMS [2026 Midyear/Final Model Software (Python)](https://www.cms.gov/medicare/payment/medicare-advantage-rates-statistics/risk-adjustment/2026-model-software-icd-10-mappings) |
-| `V28_CE_Relative_Factors.csv` | `hcc_weights` | same package |
+| `icd10cm-order-2026.txt` | `icd10_codes` | CDC FY2026 ICD-10-CM, [icd10cm-Code Descriptions-2026.zip](https://ftp.cdc.gov/pub/Health_Statistics/NCHS/Publications/ICD10CM/2026/) |
+| `ICD10_CC_mappings_CMS_HCC_2026_v28.csv` | `icd_hcc_map` | CMS [2026 Midyear/Final Model Software (Python)](https://www.cms.gov/medicare/payment/medicare-advantage-rates-statistics/risk-adjustment/2026-model-software-icd-10-mappings) |
+| `V28_CE_Relative_Factors.csv` | `hcc_categories` | same package |
 | `V28_HCC_Hierarchies.csv` | `hcc_hierarchy` | same package |
+| `V28_Diagnosis_Categories.csv` | family names (`hierarchy_group`) | same package |
 
 The model-software package is the authoritative artifact: CMS ships the exact
 mapping, hierarchy and coefficient tables its own risk-score software runs on,
@@ -43,7 +51,7 @@ unconditional and collapses to one row with no age edit. The parser asserts the
 bands really are complementary rather than deduplicating blindly, so a genuinely
 conflicting duplicate in a future CMS release fails the build.
 
-## How `disease_family` is derived
+## How `hierarchy_group` (formerly `disease_family`) is derived
 
 CMS does not publish a per-HCC family column anywhere in the model software, so
 the parser computes one: **disease families are the connected components of the
@@ -72,3 +80,12 @@ genuinely splits it.
 
 A human-friendly display grouping can be added later as a separate column
 without disturbing this one.
+
+## Hierarchy shape, and why trimming uses pairs
+
+The 48 families are not all chains. In four of the 21 multi-HCC families some
+members are incomparable: neither suppresses the other. HCC78 (intestinal
+obstruction/perforation) and HCC80 (Crohn's disease) are one example, and
+HCC182/HCC253 and HCC263/HCC405 are others. Both members of such a pair pay
+when both are present. So trimming reads the suppression pairs in `hcc_hierarchy`.
+`hierarchy_rank` (1 + the number of suppressors) is for display only.

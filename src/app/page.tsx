@@ -1,7 +1,9 @@
 import { redirect } from "next/navigation";
+import { getSessionUser, homeFor } from "@/lib/auth/dal";
 
-// Phase 1 has exactly one chart; send the root straight into it. A charts
-// list becomes a real route once there's more than one to choose from.
-export default function Home() {
-  redirect("/practice/dm-ckd-copd-72m");
+// The public landing and pricing page is a later phase. Until then the root
+// routes straight to the right place for whoever is asking.
+export default async function Home() {
+  const user = await getSessionUser();
+  redirect(user ? homeFor(user) : "/login");
 }

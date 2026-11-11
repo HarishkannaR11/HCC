@@ -18,6 +18,9 @@
   --color-accent-ink: #0b4f47;
   --color-warn-soft: #f6e7c8;
   --color-warn-ink: #7a4a05;
+  --color-danger: #b42318;
+  --color-danger-soft: #fbe4e1;
+  --color-danger-ink: #8a1c12;
   --color-topbar: #1b1f24;
 
   --radius-card: 8px;

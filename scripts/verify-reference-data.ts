@@ -84,6 +84,17 @@ function offlineSource(): Source {
   };
 }
 
+/** Payment year the expectations below were read off. */
+const PAYMENT_YEAR = 2026;
+
+/** Offline file name -> versioned table it loads into. */
+const ONLINE_TABLES: Record<string, string> = {
+  codes: "icd10_codes",
+  hcc_weights: "hcc_categories",
+  crosswalk: "icd_hcc_map",
+  hcc_hierarchy: "hcc_hierarchy",
+};
+
 function supabaseSource(): Source {
   const { url, key } = supabaseConfig();
   const db = createClient(url, key, {
@@ -96,23 +107,74 @@ function supabaseSource(): Source {
     return result.data as T;
   };
 
+  const hccNumberById = async (ids: number[]): Promise<Map<number, number>> => {
+    if (ids.length === 0) return new Map();
+    const rows = unwrap<{ id: number; hcc_number: number }[]>(
+      await db.from("hcc_categories").select("id,hcc_number").in("id", ids),
+    );
+    return new Map(rows.map((r) => [r.id, r.hcc_number]));
+  };
+
   return {
-    label: url,
+    label: `${url} (PY${PAYMENT_YEAR})`,
     async code(icd10) {
-      return unwrap(await db.from("codes").select("icd10_code,description,is_billable").eq("icd10_code", icd10).maybeSingle());
+      const row = unwrap<{ code: string; description: string; is_billable: boolean } | null>(
+        await db
+          .from("icd10_codes")
+          .select("code,description,is_billable")
+          .eq("payment_year", PAYMENT_YEAR)
+          .eq("code", icd10)
+          .maybeSingle(),
+      );
+      return row ? { icd10_code: row.code, description: row.description, is_billable: row.is_billable } : null;
     },
     async mappings(icd10) {
-      return unwrap(await db.from("crosswalk").select("icd10_code,hcc_category,age_edit,sex_edit").eq("icd10_code", icd10).order("hcc_category"));
+      const code = unwrap<{ id: number } | null>(
+        await db.from("icd10_codes").select("id").eq("payment_year", PAYMENT_YEAR).eq("code", icd10).maybeSingle(),
+      );
+      if (!code) return [];
+      const rows = unwrap<{ hcc_category_id: number; age_edit: string | null; sex_edit: string | null }[]>(
+        await db.from("icd_hcc_map").select("hcc_category_id,age_edit,sex_edit").eq("icd10_code_id", code.id),
+      );
+      const numbers = await hccNumberById(rows.map((r) => r.hcc_category_id));
+      return rows
+        .map((r) => ({
+          icd10_code: icd10,
+          hcc_category: numbers.get(r.hcc_category_id)!,
+          age_edit: r.age_edit,
+          sex_edit: r.sex_edit,
+        }))
+        .sort((a, b) => a.hcc_category - b.hcc_category);
     },
     async weight(hcc) {
-      return unwrap(await db.from("hcc_weights").select("hcc_category,label,disease_family,raf_weight").eq("hcc_category", hcc).maybeSingle());
+      const row = unwrap<{ hcc_number: number; label: string; hierarchy_group: string; raf_community_nondual: number } | null>(
+        await db
+          .from("hcc_categories")
+          .select("hcc_number,label,hierarchy_group,raf_community_nondual")
+          .eq("payment_year", PAYMENT_YEAR)
+          .eq("hcc_number", hcc)
+          .maybeSingle(),
+      );
+      return row
+        ? { hcc_category: row.hcc_number, label: row.label, disease_family: row.hierarchy_group, raf_weight: row.raf_community_nondual }
+        : null;
     },
     async suppresses(hcc) {
-      const rows = unwrap<HierarchyRow[]>(await db.from("hcc_hierarchy").select("hcc_category,suppressed_hcc").eq("hcc_category", hcc));
-      return rows.map((r) => r.suppressed_hcc);
+      const parent = unwrap<{ id: number } | null>(
+        await db.from("hcc_categories").select("id").eq("payment_year", PAYMENT_YEAR).eq("hcc_number", hcc).maybeSingle(),
+      );
+      if (!parent) return [];
+      const rows = unwrap<{ suppressed_hcc_category_id: number }[]>(
+        await db.from("hcc_hierarchy").select("suppressed_hcc_category_id").eq("hcc_category_id", parent.id),
+      );
+      const numbers = await hccNumberById(rows.map((r) => r.suppressed_hcc_category_id));
+      return rows.map((r) => numbers.get(r.suppressed_hcc_category_id)!);
     },
     async count(table) {
-      const { count, error } = await db.from(table).select("*", { count: "exact", head: true });
+      const { count, error } = await db
+        .from(ONLINE_TABLES[table] ?? table)
+        .select("*", { count: "exact", head: true })
+        .eq("payment_year", PAYMENT_YEAR);
       if (error) throw new Error(error.message);
       return count ?? 0;
     },
