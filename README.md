@@ -8,8 +8,9 @@ Every chart is synthetic. The product uses ICD-10-CM and CMS-HCC data only
 (both published free by the US government). It contains no CPT content and
 claims no affiliation with any credentialing body.
 
-**Status:** Phase 1 (foundations) complete. See `DECISIONS.md` for choices
-and deviations, and `CLAUDE.md` for the build plan.
+**Status:** Phase 2 (practice loop) complete: encoder, deterministic scoring
+with V28 hierarchy trimming, and the result screen. See `DECISIONS.md` for
+choices and deviations, and `CLAUDE.md` for the build plan.
 
 ## Stack
 
@@ -59,9 +60,11 @@ npm run dev
 ### Tests
 
 ```bash
-npm test               # unit: parser, HCC resolution, schemas, seed content, compliance
-npm run test:rls       # integration: RLS through PostgREST and GraphQL (needs the
-                       # local stack running and `npm run db:seed:fixture`)
+npm test               # unit: parser, HCC resolution, scoring engine (incl. the seed
+                       # charts scored on the CMS-format fixture), schemas, compliance
+npm run test:rls       # integration: RLS through PostgREST and GraphQL, incl. the
+                       # practice loop (needs the local stack running and
+                       # `npm run db:seed:fixture`)
 npm run typecheck
 npm run lint
 npm run build          # also fails if a server secret reaches a client bundle
@@ -100,7 +103,13 @@ data/fixtures/py2026/  small CMS-format fixture for tests and local dev
 src/proxy.ts           session refresh + optimistic redirects (Next 16 "proxy")
 src/lib/auth/          session data-access layer, redirect guard
 src/lib/charts/        constants, zod schemas, admin data helpers
-src/lib/hcc/           CMS edits, HCC resolution, RAF engine (Phase 0)
+src/lib/hcc/           CMS edits, HCC resolution, RAF + hierarchy engine
+src/lib/scoring/       attempt scoring (SCORE_WEIGHTS) and code review; pure, tested
+src/lib/practice/      encoder loaders, scoring snapshot schema, wire types
+src/lib/workspace/     encoder client state, running-RAF preview, draft resume
+src/components/workspace/  the encoder (chart pane, typeahead, assigned-code tray)
+src/app/practice/      chart list, encoder, result screen, start/draft/submit actions
+src/app/api/codes/     ICD-10-CM typeahead (signed-in only)
 src/lib/supabase/      server client, service-role client (server-only), generated types
 src/app/admin/charts/  chart + answer key editor (admin only)
 tests/rls/             RLS integration suite

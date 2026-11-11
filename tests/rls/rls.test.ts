@@ -400,6 +400,98 @@ describe("a learner", () => {
   });
 });
 
+describe("the practice loop (Phase 2)", () => {
+  let openAttemptId = "";
+
+  it("lets a learner search codes, but not an anonymous visitor", async () => {
+    const search = await users.learner.client.rpc("search_icd10_codes", { q: "e1122", p_payment_year: 2026 });
+    expect(search.error).toBeNull();
+    expect(search.data?.[0]?.code).toBe("E11.22");
+    const anonymous = await anon.rpc("search_icd10_codes", { q: "e1122", p_payment_year: 2026 });
+    expect(anonymous.error?.code).toBe("42501");
+  });
+
+  it("takes the start time from the database, never from the learner", async () => {
+    const forged = await users.otherLearner.client
+      .from("attempts")
+      .insert({ chart_id: publishedChartId, user_id: users.otherLearner.id, started_at: "2020-01-01T00:00:00Z" });
+    expect(forged.error?.code).toBe("42501");
+  });
+
+  it("allows one open attempt per chart", async () => {
+    const first = await users.otherLearner.client
+      .from("attempts")
+      .insert({ chart_id: publishedChartId, user_id: users.otherLearner.id })
+      .select("id")
+      .single();
+    expect(first.error).toBeNull();
+    openAttemptId = first.data!.id;
+    const second = await users.otherLearner.client.from("attempts").insert({ chart_id: publishedChartId, user_id: users.otherLearner.id });
+    expect(second.error?.code).toBe("23505");
+  });
+
+  it("does not let a learner submit or score through the submission function", async () => {
+    const own = await users.otherLearner.client.rpc("submit_scored_attempt", {
+      p_attempt_id: openAttemptId,
+      p_user_id: users.otherLearner.id,
+      p_codes: [{ icd10_code: "E11.22" }],
+      p_result: { captured: ["HCC37"], missed: [], over_coded: [], precision: 1, recall: 1, raf_user: 1, raf_key: 1, raf_delta: 0, score_pct: 100 },
+    });
+    expect(own.error?.code).toBe("42501");
+    const { data } = await service.from("attempts").select("submitted_at").eq("id", openAttemptId).single();
+    expect(data?.submitted_at).toBeNull();
+  });
+
+  it("records a server-side submission in one step, readable only by its owner", async () => {
+    const submitted = await service.rpc("submit_scored_attempt", {
+      p_attempt_id: openAttemptId,
+      p_user_id: users.otherLearner.id,
+      p_codes: [{ icd10_code: "E11.22", supporting_excerpt: "diabetic CKD", user_rationale: "" }],
+      p_result: {
+        captured: ["HCC37"],
+        missed: [],
+        over_coded: [],
+        precision: 1,
+        recall: 1,
+        raf_user: 0.166,
+        raf_key: 0.166,
+        raf_delta: 0,
+        score_pct: 100,
+        breakdown: { version: 1 },
+      },
+    });
+    expect(submitted.error).toBeNull();
+
+    const mine = await users.otherLearner.client
+      .from("attempts")
+      .select("submitted_at, duration_seconds, attempt_results(captured, score_pct, breakdown), attempt_codes(icd10_code, user_rationale)")
+      .eq("id", openAttemptId)
+      .single();
+    expect(mine.data?.submitted_at).not.toBeNull();
+    expect(mine.data?.duration_seconds).toBeGreaterThanOrEqual(0);
+    expect(mine.data?.attempt_results?.captured).toEqual(["HCC37"]);
+    expect(mine.data?.attempt_codes).toEqual([{ icd10_code: "E11.22", user_rationale: null }]);
+
+    const theirs = await users.learner.client.from("attempt_results").select("*").eq("attempt_id", openAttemptId);
+    expect(theirs.data).toEqual([]);
+
+    const again = await service.rpc("submit_scored_attempt", {
+      p_attempt_id: openAttemptId,
+      p_user_id: users.otherLearner.id,
+      p_codes: [],
+      p_result: { captured: [], missed: [], over_coded: [], precision: 1, recall: 1, raf_user: 0, raf_key: 0, raf_delta: 0, score_pct: 100 },
+    });
+    expect(again.error?.code).toBe("P0002");
+  });
+
+  it("still cannot read the answer key after submitting", async () => {
+    const key = await users.otherLearner.client.from("answer_key_items").select("*").eq("chart_id", publishedChartId);
+    expect(key.data ?? []).toEqual([]);
+    const distractors = await users.otherLearner.client.from("distractors").select("*").eq("chart_id", publishedChartId);
+    expect(distractors.data ?? []).toEqual([]);
+  });
+});
+
 describe("an anonymous visitor", () => {
   it("can read public reference data", async () => {
     const { data } = await anon.from("hcc_categories").select("hcc_code").eq("payment_year", 2026).eq("hcc_code", "HCC37");

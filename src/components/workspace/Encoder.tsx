@@ -101,11 +101,14 @@ export function Encoder({
     () =>
       store.subscribe((next, prev) => {
         if (next.assigned === prev.assigned && next.evidence === prev.evidence) return;
+        // The attempt (and its database-clocked start) begins with the first
+        // assigned code, not with the first debounced save.
+        if (!next.attemptId && next.assigned.length > 0) void ensureAttempt();
         setSaveStatus("pending");
         if (saveTimer.current) clearTimeout(saveTimer.current);
         saveTimer.current = setTimeout(() => void flushSave(), SAVE_DEBOUNCE_MS);
       }),
-    [store, flushSave],
+    [store, flushSave, ensureAttempt],
   );
   useEffect(() => () => {
     if (saveTimer.current) clearTimeout(saveTimer.current);

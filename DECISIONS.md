@@ -65,3 +65,33 @@ reasoning each. Newest phase at the bottom.
 
 ### Noted, not changed (no-refactor rule)
 - `src/lib/hcc/__tests__/raf.test.ts` uses 0.237 for HCC327. The PY2026 V28 table says **0.514** (the fixture and DB have 0.514). The test still passes because it only checks its own fixture. It will be corrected when Phase 2 builds `lib/scoring` and its tests.
+
+## Phase 2 — Practice loop
+
+### Base
+- **Phase 2 builds on `phase-1-foundations`.** A parallel Phase 1 (`98363bc`) existed on the working branch. It is kept in history through a merge whose tree is exactly `phase-1-foundations`, so nothing was force-pushed or lost.
+
+### Scoring (`src/lib/scoring/`)
+- **The spec's six steps, exactly, with weights in `SCORE_WEIGHTS` (0.5 / 0.3 / 0.2).** The engine is pure, built on the Phase 0 RAF core (`src/lib/hcc/raf.ts`), and covered by hand-worked tests.
+- **Step 2 trims with CMS's suppression pairs, on each side separately, before comparing** (see Phase 1). For example, coding I50.23 suppresses the key's HCC226 on the learner's side: HCC226 counts as missed and HCC224 as over-coded.
+- **RAF accuracy with an HCC-free key** is 1 if the submission is also HCC-free, else 0. The spec's formula divides by the key's RAF, which would be zero.
+- **Spec consequence, kept as written:** precision is 1 when the denominator is 0, so a submission with no HCCs at all scores 30%. Tune `SCORE_WEIGHTS` or the rule if that is too generous.
+- **Optional key codes (`is_required = false`) are set aside entirely.** They are never a miss, never an over-code, and stay out of both RAFs.
+- **A code-level review sits alongside the HCC score** (correct / optional / planted trap / not on the key / missed). Non-HCC specificity errors (I10 vs I12.9) are taught even though they cannot move the score. It also records the traps hit and avoided for Phase 3's weakness breakdown.
+- **Patient age follows Phase 1's decision: whole years at the encounter.** CMS's software applies its edits at age on Feb 1 of the payment year. The two differ only within a year of an edit boundary (e.g. breast cancer at 50); flagged for review.
+
+### Storage and security
+- **`attempt_results.breakdown` (jsonb) snapshots the full scoring detail at submission.** The result screen renders from it, so every number stays reproducible even if the key or reference data change later. It is validated with zod on read.
+- **`submit_scored_attempt()` writes the final codes, `submitted_at`, the duration and the result in one transaction.** It is service-role only. It locks the open attempt, so a concurrent draft save or double submit cannot interleave.
+- **Every attempt timestamp comes from the database clock.** Learners may set only `user_id`, `chart_id` and `mode` when starting an attempt, so `started_at` can't be forged. Phase 3's timed mode can trust it.
+- **One open attempt per learner per chart** (partial unique index). Reopening a chart resumes it.
+- **The answer key is read only in the submit action and on the result screen**, with the service role, after confirming the attempt is the caller's own (and, on the result screen, submitted). No learner-callable path to it exists, as in Phase 1.
+- **The typeahead is signed-in only.** `search_icd10_codes` is revoked from anon and `/api/codes` checks the session. Rate limiting is Phase 5.
+
+### Encoder
+- **Drafts live on the server** (`attempt_codes` of the open attempt, autosaved), not in the browser, so a reload or another device resumes. Highlights are rebuilt by finding the saved excerpt text in the note. Multiple snippets per code are joined with " … ".
+- **The attempt, and its clock, starts with the first assigned code**, not when the page opens. A GET must not create rows, and abandoned page views should not count as attempts.
+- **The running RAF in the tray runs the same engine over public reference data in the browser.** It never touches the key, and the server re-scores from scratch at submission.
+- **MEAT tags from the Phase 0 draft encoder were dropped.** They were neither stored nor scored, and are a candidate for audit mode.
+- **The evidence popover defaults to the most recently assigned code** (add a code, then highlight its support). Keys 1–9 pick another.
+- **Practice list filters (specialty, difficulty, payment year, not yet scored) and best/last scores** come from the spec's route list. They needed no schema change.
