@@ -96,3 +96,30 @@ reasoning each. Newest phase at the bottom.
 - **MEAT tags from the Phase 0 draft encoder were dropped.** They were neither stored nor scored, and are a candidate for audit mode.
 - **The evidence popover defaults to the most recently assigned code** (add a code, then highlight its support). Keys 1–9 pick another.
 - **Practice list filters (specialty, difficulty, payment year, not yet scored) and best/last scores** come from the spec's route list. They needed no schema change.
+
+## Phase 3 — Progress
+
+### Analytics (`src/lib/progress/`, pure, tested)
+- **Every dashboard figure is a deterministic rule over the learner's own scored attempts.** There is no model and no randomness, so the same history always says the same thing. Insights are threshold sentences, shown as provisional below five charts.
+- **Trap statistics count once per chart per trap type.** A single mistake that both misses the right code and codes the planted wrong one (I50.22 for I50.23) is one hit, not two. Read as "caught you in N of the M charts that planted one".
+- **"Costliest HCC family" groups missed and over-coded HCCs by `hierarchy_group`, after trimming.** It names the specific HCCs, so the learner sees *which* condition, not just a family.
+- **Undercoding vs overcoding** needs at least 2 errors on the leading side and a 1.5× lead before it is called a tendency. Otherwise it is "balanced" and nothing is said.
+- **The trend compares the last five scores with the five before.** It is only called up or down at a move of ≥ 5 points with at least 3 in each window.
+
+### Recommendation
+- **The next-chart recommender uses public chart metadata (difficulty, specialty) and the learner's own scores only. It never reads answer keys or distractors**, so a recommendation can't hint that a chart contains, say, a status-vs-history trap. Order: unfinished draft; then an unscored chart at a difficulty stepped from recent form (≥ 85% up, < 60% down), preferring the specialty the learner scores lowest in; then a retry of the weakest chart.
+
+### Streaks
+- **A day is the learner's local day.** The browser's IANA zone is sent with each submission, validated in SQL against `pg_timezone_names` (unknown zones fall back to UTC), stored on `profiles.timezone`, and applied there. `submit_scored_attempt` writes `daily_activity` in the same transaction as the result.
+- **A streak stays alive through today if yesterday counted**, and breaks after a whole local day with no scored chart.
+- **Phase 2 submissions were backfilled on UTC dates**, since their zones were never recorded.
+
+### Timed mode
+- **The learner picks Practice or Timed before an attempt starts; the mode is fixed after that.**
+- **Limits are set by the database from difficulty: 10 / 15 / 20 minutes** (`timed_limit_seconds()` in 0010, mirrored for display in `TIMED_LIMIT_SECONDS`). Learners can't insert `time_limit_seconds`, and `started_at` is already database-clocked, so time on a timed chart can't be forged.
+- **At 0:00 the encoder submits what is in the tray.** Late submissions are still scored and shown as over time rather than rejected, so no work is lost. They count as within the limit up to 10 seconds over (`TIMED_GRACE_SECONDS`), because the auto-submit's round trip lands just after 0:00.
+- **Audit mode is refused by the same trigger until Phase 5 builds it.**
+
+### Dashboard
+- **Learners now land on `/dashboard` after logging in.** Sign-up still lands on `/practice`, since a brand-new dashboard is empty.
+- **The accuracy chart uses one axis (0–100%), score plus a three-chart rolling mean**, with a hover/keyboard crosshair and a table view. Its two series were checked with the dataviz palette validator (all checks pass on the light surface). Trap rates are a meter list: one ratio per row, one hue.

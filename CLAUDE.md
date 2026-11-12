@@ -65,10 +65,10 @@ India to US customers, so no US-entity requirement).
 ## Build order
 1. **Foundations** (done): schema, RLS, auth (email + Google), admin chart and
    answer-key CRUD, PY2026 seed, 3 synthetic charts, RLS integration tests.
-2. **Practice loop**: encoder (split pane, typeahead, trimmed running RAF,
+2. **Practice loop** (done): encoder (split pane, typeahead, trimmed running RAF,
    evidence highlighting, rationale, keyboard-first), `lib/scoring/` pure
    engine with tests before the result screen, result screen.
-3. **Progress**: dashboard, streaks, per-trap weakness, recommendation, timed mode.
+3. **Progress** (done): dashboard, streaks, per-trap weakness, recommendation, timed mode.
 4. **Monetization**: 5 free charts, paywall, checkout, webhooks, `/billing`.
 5. **Audit mode + hardening**: audit mode, error boundaries, search rate
    limits, Sentry, landing SEO, legal pages.

@@ -20,3 +20,12 @@ schema in `supabase/migrations/0004`–`0008`.
 **Verified:** a chart completed end to end reproduces the hand-worked score
 (72.91% for E11.22 + N18.31 on the diabetes chart), and a status code coded
 where only history is documented fires its trap explanation.
+
+## Phase 3 — Progress (done)
+- [x] Dashboard: accuracy over time, local-day streaks, per-trap and per-family
+      weak spots as ranked insights, recommended next chart.
+- [x] Timed mode: database-set limits, database-clocked start, auto-submit at 0:00.
+
+**Verified:** after five scored charts the dashboard names a weak spot the
+learner would not guess. In the test run that was status vs. history (3 of
+3 charts), not the acuity slip that cost them most visibly.

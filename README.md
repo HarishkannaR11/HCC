@@ -8,8 +8,10 @@ Every chart is synthetic. The product uses ICD-10-CM and CMS-HCC data only
 (both published free by the US government). It contains no CPT content and
 claims no affiliation with any credentialing body.
 
-**Status:** Phase 2 (practice loop) complete: encoder, deterministic scoring
-with V28 hierarchy trimming, and the result screen. See `DECISIONS.md` for
+**Status:** Phase 3 (progress) complete: dashboard with accuracy trend,
+local-day streaks, per-trap and per-family weak spots, a next-chart
+recommendation, and timed mode. Phase 2 (encoder, deterministic scoring with
+V28 hierarchy trimming, result screen) before it. See `DECISIONS.md` for
 choices and deviations, and `CLAUDE.md` for the build plan.
 
 ## Stack
@@ -105,7 +107,9 @@ src/lib/auth/          session data-access layer, redirect guard
 src/lib/charts/        constants, zod schemas, admin data helpers
 src/lib/hcc/           CMS edits, HCC resolution, RAF + hierarchy engine
 src/lib/scoring/       attempt scoring (SCORE_WEIGHTS) and code review; pure, tested
-src/lib/practice/      encoder loaders, scoring snapshot schema, wire types
+src/lib/practice/      encoder loaders, scoring snapshot schema, wire types, timed limits
+src/lib/progress/      streaks, trend, trap/family weak spots, insights, recommender; pure, tested
+src/app/dashboard/     progress dashboard
 src/lib/workspace/     encoder client state, running-RAF preview, draft resume
 src/components/workspace/  the encoder (chart pane, typeahead, assigned-code tray)
 src/app/practice/      chart list, encoder, result screen, start/draft/submit actions
