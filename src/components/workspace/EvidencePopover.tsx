@@ -1,106 +1,102 @@
 "use client";
 
-import { useState } from "react";
-import type { MeatElement } from "@/lib/workspace/types";
+import { useEffect, useRef, useState } from "react";
 
-const MEAT_OPTIONS: Array<{ key: MeatElement; label: string }> = [
-  { key: "M", label: "Monitor" },
-  { key: "E", label: "Evaluate" },
-  { key: "A", label: "Assess" },
-  { key: "T", label: "Treat" },
-];
-
-export interface EvidencePopoverProps {
-  /** Viewport coordinates of the selection this popover is anchored to. */
+/**
+ * Link a text selection to one assigned code. Keyboard: 1–9 picks a code,
+ * Enter links, Esc cancels.
+ */
+export function EvidencePopover({
+  anchor,
+  excerpt,
+  codes,
+  onConfirm,
+  onCancel,
+}: {
   anchor: { top: number; bottom: number; left: number };
-  claimedCodes: string[];
-  onConfirm: (codeId: string, meat: MeatElement[]) => void;
+  excerpt: string;
+  codes: string[];
+  onConfirm: (code: string) => void;
   onCancel: () => void;
-}
+}) {
+  const [selected, setSelected] = useState(codes[codes.length - 1] ?? "");
+  const ref = useRef<HTMLDivElement>(null);
 
-export function EvidencePopover({ anchor, claimedCodes, onConfirm, onCancel }: EvidencePopoverProps) {
-  const [codeId, setCodeId] = useState(claimedCodes[0] ?? "");
-  const [meat, setMeat] = useState<MeatElement[]>([]);
+  useEffect(() => {
+    ref.current?.focus();
+  }, []);
 
-  const placeAbove = anchor.top > 220;
+  function onKeyDown(e: React.KeyboardEvent) {
+    if (e.key === "Escape") {
+      e.preventDefault();
+      onCancel();
+    } else if (e.key === "Enter" && selected) {
+      e.preventDefault();
+      onConfirm(selected);
+    } else if (/^[1-9]$/.test(e.key)) {
+      const code = codes[Number(e.key) - 1];
+      if (code) {
+        e.preventDefault();
+        setSelected(code);
+      }
+    }
+  }
+
+  const placeAbove = anchor.top > 260;
+  const left = Math.min(anchor.left, (typeof window === "undefined" ? 1200 : window.innerWidth) - 336);
   const style: React.CSSProperties = placeAbove
-    ? { position: "fixed", left: anchor.left, bottom: window.innerHeight - anchor.top + 8, zIndex: 50 }
-    : { position: "fixed", left: anchor.left, top: anchor.bottom + 8, zIndex: 50 };
-
-  function toggleMeat(key: MeatElement) {
-    setMeat((current) => (current.includes(key) ? current.filter((m) => m !== key) : [...current, key]));
-  }
-
-  if (claimedCodes.length === 0) {
-    return (
-      <div
-        style={style}
-        className="w-72 rounded-card border border-border bg-surface p-3.5 shadow-none flex flex-col gap-2.5"
-      >
-        <p className="text-[13px] text-ink/90">Add a code to the claimed list before linking evidence to it.</p>
-        <button
-          type="button"
-          onClick={onCancel}
-          className="self-end h-9 px-3 rounded-card border border-border text-[13px] font-medium text-ink/80 cursor-pointer"
-        >
-          Close
-        </button>
-      </div>
-    );
-  }
+    ? { position: "fixed", left, bottom: window.innerHeight - anchor.top + 8, zIndex: 50 }
+    : { position: "fixed", left, top: anchor.bottom + 8, zIndex: 50 };
 
   return (
-    <div style={style} className="w-80 rounded-card border border-accent bg-surface p-3.5 flex flex-col gap-3">
-      <div className="flex flex-col gap-1.5">
-        <label htmlFor="evidence-code" className="text-[12px] font-semibold text-ink/90">
-          Link as evidence for
-        </label>
-        <select
-          id="evidence-code"
-          value={codeId}
-          onChange={(e) => setCodeId(e.target.value)}
-          className="h-9 rounded-card border border-border bg-surface px-2 font-mono text-[13px]"
-        >
-          {claimedCodes.map((code) => (
-            <option key={code} value={code}>
-              {code}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <fieldset className="flex flex-col gap-1.5">
-        <legend className="text-[12px] font-semibold text-ink/90 mb-0.5">This shows (optional)</legend>
-        <div className="flex flex-wrap gap-x-3 gap-y-1.5">
-          {MEAT_OPTIONS.map(({ key, label }) => (
-            <label key={key} className="flex items-center gap-1.5 text-[13px] text-ink/90 cursor-pointer">
+    <div
+      ref={ref}
+      role="dialog"
+      aria-label="Link evidence"
+      tabIndex={-1}
+      onKeyDown={onKeyDown}
+      style={style}
+      className="flex w-80 flex-col gap-3 rounded-card border border-accent bg-surface p-3.5 font-sans shadow-lg outline-none"
+    >
+      <p className="m-0 line-clamp-3 text-[13px] italic text-ink/80">“{excerpt.trim()}”</p>
+      {codes.length === 0 ? (
+        <p className="m-0 text-[13px] text-ink/90">Assign a code first, then link this text to it as evidence.</p>
+      ) : (
+        <fieldset className="m-0 flex flex-col gap-1 border-0 p-0">
+          <legend className="mb-1 text-[12px] font-semibold text-ink/90">Evidence for</legend>
+          {codes.map((code, i) => (
+            <label key={code} className="flex cursor-pointer items-center gap-2 text-[13px]">
               <input
-                type="checkbox"
-                checked={meat.includes(key)}
-                onChange={() => toggleMeat(key)}
-                className="h-4 w-4 accent-accent"
+                type="radio"
+                name="evidence-code"
+                value={code}
+                checked={selected === code}
+                onChange={() => setSelected(code)}
+                className="accent-accent"
               />
-              {label}
+              <span className="w-4 text-[11px] text-muted">{i < 9 ? i + 1 : ""}</span>
+              <span className="font-mono">{code}</span>
             </label>
           ))}
-        </div>
-      </fieldset>
-
-      <div className="flex items-center justify-end gap-2 pt-0.5">
+        </fieldset>
+      )}
+      <div className="flex items-center justify-end gap-2">
         <button
           type="button"
           onClick={onCancel}
-          className="h-9 px-3 rounded-card border border-border text-[13px] font-medium text-ink/80 cursor-pointer"
+          className="h-8 cursor-pointer rounded-[6px] border border-border px-3 text-[13px] font-medium text-ink/80"
         >
           Cancel
         </button>
-        <button
-          type="button"
-          onClick={() => onConfirm(codeId, meat)}
-          className="h-9 px-3.5 rounded-card bg-accent text-[13px] font-medium text-white cursor-pointer"
-        >
-          Link evidence
-        </button>
+        {codes.length > 0 ? (
+          <button
+            type="button"
+            onClick={() => onConfirm(selected)}
+            className="h-8 cursor-pointer rounded-[6px] bg-accent px-3 text-[13px] font-medium text-white"
+          >
+            Link evidence
+          </button>
+        ) : null}
       </div>
     </div>
   );

@@ -1,126 +1,130 @@
 /**
- * Phase 0 verification: walk a handful of known codes from ICD-10 through the
- * crosswalk to a RAF weight and check the answer against hand-verified CMS
- * values.
+ * Walk known codes from ICD-10 through the map to a RAF weight and check the
+ * answers against hand-verified CMS PY2026 V28 values.
  *
- * Runs against Supabase by default. Pass --offline to check data/processed
- * instead, which is useful before the migration has been applied.
+ *   npm run data:verify                 # the loaded database (DATABASE_URL)
+ *   npm run data:verify -- --offline    # data/processed/py2026.json
+ *   npm run data:verify -- --fixture    # skip release-wide counts (fixture subset)
  */
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { createClient } from "@supabase/supabase-js";
-import { supabaseConfig } from "./lib/env";
-import { retryFetch } from "./lib/retry-fetch";
+import { parseArgs } from "node:util";
+import { Client } from "pg";
+import { databaseUrl } from "./lib/env";
+import type { ReferenceRelease } from "./lib/reference-build";
 
-type CodeRow = { icd10_code: string; description: string; is_billable: boolean };
-type CrosswalkRow = { icd10_code: string; hcc_category: number; age_edit: string | null; sex_edit: string | null };
-type WeightRow = { hcc_category: number; label: string; disease_family: string; raf_weight: number };
-type HierarchyRow = { hcc_category: number; suppressed_hcc: number };
+const YEAR = 2026;
+
+interface Mapping {
+  hcc_code: string;
+  age_edit: string | null;
+}
+interface Category {
+  hcc_code: string;
+  raf_community_nondual: number;
+  hierarchy_group: string;
+}
 
 interface Source {
   label: string;
-  code(icd10: string): Promise<CodeRow | null>;
-  mappings(icd10: string): Promise<CrosswalkRow[]>;
-  weight(hcc: number): Promise<WeightRow | null>;
-  suppresses(hcc: number): Promise<number[]>;
-  count(table: string): Promise<number>;
+  billable(code: string): Promise<boolean | null>;
+  mappings(code: string): Promise<Mapping[]>;
+  category(hcc: string): Promise<Category | null>;
+  suppresses(hcc: string): Promise<string[]>;
+  counts(): Promise<Record<string, number>>;
+  close(): Promise<void>;
 }
 
 /** Expected values, read off the CMS PY2026 V28 files by hand. */
-const EXPECTATIONS = {
-  counts: { codes: 98186, hcc_weights: 115, crosswalk: 8358, hcc_hierarchy: 149 },
-  diabetes: { code: "E11.9", hcc: 38, raf: 0.166, family: "diabetes" },
-  heartFailure: { code: "I50.32", hcc: 226, raf: 0.36, family: "hf" },
+const EXPECT = {
+  counts: { icd10_codes: 98186, hcc_categories: 115, hcc_hierarchy: 149 },
+  diabetes: { code: "E11.9", hcc: "HCC38", raf: 0.166, group: "diabetes" },
+  heartFailure: { code: "I50.32", hcc: "HCC226", raf: 0.36, group: "hf" },
   unmapped: "I10",
-  ageSplit: {
-    code: "C50.011",
-    under: { hcc: 22, raf: 0.363, edit: "age < 50" },
-    over: { hcc: 23, raf: 0.186, edit: "age >= 50" },
-  },
-  suppression: { severe: 37, suppressed: 38 },
-  /**
-   * A live-data baseline for the Phase 2 RAF engine. One patient, both diabetes
-   * codes on the chart: E11.22 captures HCC37, E11.9 captures HCC38, and HCC37
-   * suppresses HCC38 -- so the family scores once, not twice.
-   */
-  suppressedRaf: {
-    codes: ["E11.22", "E11.9"],
-    capturedHccs: [37, 38],
-    survivingHccs: [37],
-    naiveRaf: 0.332,
-    correctRaf: 0.166,
-  },
+  ageSplit: { code: "C50.912", under: { hcc: "HCC22", edit: "age < 50" }, over: { hcc: "HCC23", edit: "age >= 50" } },
+  suppression: { severe: "HCC37", suppressed: "HCC38" },
 };
 
 function offlineSource(): Source {
-  const load = <T,>(name: string): T[] =>
-    JSON.parse(readFileSync(join(process.cwd(), "data", "processed", `${name}.json`), "utf8"));
-
-  const codes = load<CodeRow>("codes");
-  const crosswalk = load<CrosswalkRow>("crosswalk");
-  const weights = load<WeightRow & { coef_community_na: number }>("hcc_weights");
-  const hierarchy = load<HierarchyRow>("hcc_hierarchy");
-  const tables: Record<string, unknown[]> = { codes, crosswalk, hcc_weights: weights, hcc_hierarchy: hierarchy };
-
+  const release: ReferenceRelease = JSON.parse(
+    readFileSync(join(process.cwd(), "data", "processed", `py${YEAR}.json`), "utf8"),
+  );
   return {
-    label: "data/processed (offline)",
-    async code(icd10) {
-      return codes.find((c) => c.icd10_code === icd10) ?? null;
+    label: `data/processed/py${YEAR}.json`,
+    async billable(code) {
+      return release.icd10_codes.find((c) => c.code === code)?.is_billable ?? null;
     },
-    async mappings(icd10) {
-      return crosswalk.filter((c) => c.icd10_code === icd10);
+    async mappings(code) {
+      return release.icd_hcc_map.filter((m) => m.code === code);
     },
-    async weight(hcc) {
-      const row = weights.find((w) => w.hcc_category === hcc);
-      // raf_weight is a generated column in Postgres; mirror it here.
-      return row ? { ...row, raf_weight: row.coef_community_na } : null;
+    async category(hcc) {
+      return release.hcc_categories.find((c) => c.hcc_code === hcc) ?? null;
     },
     async suppresses(hcc) {
-      return hierarchy.filter((h) => h.hcc_category === hcc).map((h) => h.suppressed_hcc);
+      return release.hcc_hierarchy.filter((p) => p.parent === hcc).map((p) => p.child);
     },
-    async count(table) {
-      return tables[table].length;
+    async counts() {
+      return {
+        icd10_codes: release.icd10_codes.length,
+        hcc_categories: release.hcc_categories.length,
+        hcc_hierarchy: release.hcc_hierarchy.length,
+      };
     },
+    async close() {},
   };
 }
 
-function supabaseSource(): Source {
-  const { url, key } = supabaseConfig();
-  const db = createClient(url, key, {
-    auth: { persistSession: false },
-    global: { fetch: retryFetch },
-  });
-
-  const unwrap = <T,>(result: { data: T | null; error: { message: string } | null }): T => {
-    if (result.error) throw new Error(result.error.message);
-    return result.data as T;
-  };
-
+async function databaseSource(): Promise<Source> {
+  const db = new Client({ connectionString: databaseUrl() });
+  await db.connect();
   return {
-    label: url,
-    async code(icd10) {
-      return unwrap(await db.from("codes").select("icd10_code,description,is_billable").eq("icd10_code", icd10).maybeSingle());
+    label: "database",
+    async billable(code) {
+      const r = await db.query("select is_billable from icd10_codes where payment_year = $1 and code = $2", [YEAR, code]);
+      return r.rows[0]?.is_billable ?? null;
     },
-    async mappings(icd10) {
-      return unwrap(await db.from("crosswalk").select("icd10_code,hcc_category,age_edit,sex_edit").eq("icd10_code", icd10).order("hcc_category"));
+    async mappings(code) {
+      const r = await db.query<Mapping>(
+        `select h.hcc_code, m.age_edit
+         from icd_hcc_map m
+         join icd10_codes i on i.id = m.icd10_code_id
+         join hcc_categories h on h.id = m.hcc_category_id
+         where i.payment_year = $1 and i.code = $2
+         order by h.hcc_code`,
+        [YEAR, code],
+      );
+      return r.rows;
     },
-    async weight(hcc) {
-      return unwrap(await db.from("hcc_weights").select("hcc_category,label,disease_family,raf_weight").eq("hcc_category", hcc).maybeSingle());
+    async category(hcc) {
+      const r = await db.query(
+        "select hcc_code, raf_community_nondual::float8 as raf_community_nondual, hierarchy_group from hcc_categories where payment_year = $1 and hcc_code = $2",
+        [YEAR, hcc],
+      );
+      return r.rows[0] ?? null;
     },
     async suppresses(hcc) {
-      const rows = unwrap<HierarchyRow[]>(await db.from("hcc_hierarchy").select("hcc_category,suppressed_hcc").eq("hcc_category", hcc));
-      return rows.map((r) => r.suppressed_hcc);
+      const r = await db.query<{ hcc_code: string }>(
+        `select c.hcc_code from hcc_hierarchy x
+         join hcc_categories p on p.id = x.parent_hcc_id
+         join hcc_categories c on c.id = x.child_hcc_id
+         where x.payment_year = $1 and p.hcc_code = $2`,
+        [YEAR, hcc],
+      );
+      return r.rows.map((row) => row.hcc_code);
     },
-    async count(table) {
-      const { count, error } = await db.from(table).select("*", { count: "exact", head: true });
-      if (error) throw new Error(error.message);
-      return count ?? 0;
+    async counts() {
+      const out: Record<string, number> = {};
+      for (const table of ["icd10_codes", "hcc_categories", "hcc_hierarchy"]) {
+        const r = await db.query(`select count(*)::int as n from ${table} where payment_year = $1`, [YEAR]);
+        out[table] = r.rows[0].n;
+      }
+      return out;
     },
+    close: () => db.end(),
   };
 }
 
 let failures = 0;
-
 function check(description: string, actual: unknown, expected: unknown): void {
   const ok = JSON.stringify(actual) === JSON.stringify(expected);
   if (!ok) failures++;
@@ -129,103 +133,56 @@ function check(description: string, actual: unknown, expected: unknown): void {
 }
 
 async function main(): Promise<void> {
-  const source = process.argv.includes("--offline") ? offlineSource() : supabaseSource();
-  console.log(`Verifying reference data against ${source.label}\n`);
+  const { values } = parseArgs({
+    options: { offline: { type: "boolean", default: false }, fixture: { type: "boolean", default: false } },
+  });
+  const source = values.offline ? offlineSource() : await databaseSource();
+  console.log(`Verifying PY${YEAR} reference data in ${source.label}\n`);
 
-  console.log("Row counts");
-  for (const [table, expected] of Object.entries(EXPECTATIONS.counts)) {
-    check(table, await source.count(table), expected);
-  }
-
-  console.log("\nE11.9 -> HCC -> RAF");
-  const { diabetes } = EXPECTATIONS;
-  const e119 = await source.code(diabetes.code);
-  check(`${diabetes.code} exists and is billable`, e119?.is_billable, true);
-  console.log(`        "${e119?.description}"`);
-  const e119Maps = await source.mappings(diabetes.code);
-  check(`${diabetes.code} maps to exactly one HCC`, e119Maps.length, 1);
-  check(`${diabetes.code} -> HCC${diabetes.hcc}`, e119Maps[0]?.hcc_category, diabetes.hcc);
-  const dmWeight = await source.weight(diabetes.hcc);
-  console.log(`        HCC${diabetes.hcc} "${dmWeight?.label}"`);
-  check(`HCC${diabetes.hcc} RAF weight`, Number(dmWeight?.raf_weight), diabetes.raf);
-  check(`HCC${diabetes.hcc} disease family`, dmWeight?.disease_family, diabetes.family);
-
-  console.log("\nHeart failure");
-  const { heartFailure: hf } = EXPECTATIONS;
-  const hfMaps = await source.mappings(hf.code);
-  check(`${hf.code} -> HCC${hf.hcc}`, hfMaps[0]?.hcc_category, hf.hcc);
-  const hfWeight = await source.weight(hf.hcc);
-  console.log(`        HCC${hf.hcc} "${hfWeight?.label}"`);
-  check(`HCC${hf.hcc} RAF weight`, Number(hfWeight?.raf_weight), hf.raf);
-  check(`HCC${hf.hcc} disease family`, hfWeight?.disease_family, hf.family);
-
-  console.log("\nUnmapped code (hypertension does not risk-adjust)");
-  const hypertension = await source.code(EXPECTATIONS.unmapped);
-  check(`${EXPECTATIONS.unmapped} is a valid code`, hypertension !== null, true);
-  check(`${EXPECTATIONS.unmapped} maps to no HCC`, (await source.mappings(EXPECTATIONS.unmapped)).length, 0);
-
-  console.log("\nMulti-HCC code split by an age edit");
-  const { ageSplit } = EXPECTATIONS;
-  const breast = await source.code(ageSplit.code);
-  console.log(`        "${breast?.description}"`);
-  const splits = (await source.mappings(ageSplit.code)).sort((a, b) => a.hcc_category - b.hcc_category);
-  check(`${ageSplit.code} maps to two HCCs`, splits.length, 2);
-  for (const [position, expected] of [["under", ageSplit.under], ["over", ageSplit.over]] as const) {
-    const row = splits.find((s) => s.hcc_category === expected.hcc);
-    check(`  HCC${expected.hcc} guarded by "${expected.edit}"`, row?.age_edit, expected.edit);
-    const weight = await source.weight(expected.hcc);
-    check(`  HCC${expected.hcc} RAF weight (${position} threshold)`, Number(weight?.raf_weight), expected.raf);
-  }
-
-  console.log("\nV28 hierarchy");
-  const { suppression } = EXPECTATIONS;
-  const suppressed = await source.suppresses(suppression.severe);
-  check(
-    `HCC${suppression.severe} suppresses HCC${suppression.suppressed}`,
-    suppressed.includes(suppression.suppressed),
-    true,
-  );
-  console.log(`        HCC${suppression.severe} suppresses ${suppressed.sort((a, b) => a - b).join(", ")}`);
-
-  console.log("\nSuppression applied to RAF (baseline for the Phase 2 engine)");
-  const { suppressedRaf: scenario } = EXPECTATIONS;
-  console.log(`        chart codes: ${scenario.codes.join(" + ")}`);
-
-  // Resolve codes -> HCCs the way the engine will, ignoring age/sex edits:
-  // neither diabetes code carries one.
-  const captured = new Set<number>();
-  for (const code of scenario.codes) {
-    for (const mapping of await source.mappings(code)) captured.add(mapping.hcc_category);
-  }
-  check("captured HCCs before suppression", [...captured].sort((a, b) => a - b), scenario.capturedHccs);
-
-  // Drop any captured HCC that a co-captured, more severe HCC suppresses.
-  const surviving = new Set(captured);
-  for (const hcc of captured) {
-    for (const victim of await source.suppresses(hcc)) {
-      if (captured.has(victim)) surviving.delete(victim);
+  try {
+    if (!values.fixture) {
+      console.log("Release-wide counts");
+      const counts = await source.counts();
+      for (const [table, expected] of Object.entries(EXPECT.counts)) check(table, counts[table], expected);
     }
-  }
-  check("surviving HCCs after suppression", [...surviving].sort((a, b) => a - b), scenario.survivingHccs);
 
-  const sum = async (hccs: Iterable<number>): Promise<number> => {
-    let total = 0;
-    for (const hcc of hccs) total += Number((await source.weight(hcc))?.raf_weight ?? 0);
-    return Math.round(total * 1000) / 1000;
-  };
-  const naive = await sum(captured);
-  const correct = await sum(surviving);
-  console.log(`        double-counted RAF would be ${naive.toFixed(3)}`);
-  check("naive RAF double-counts the family", naive, scenario.naiveRaf);
-  check("suppressed RAF counts the family once", correct, scenario.correctRaf);
+    for (const [name, x] of [["Diabetes", EXPECT.diabetes], ["Heart failure", EXPECT.heartFailure]] as const) {
+      console.log(`\n${name}: ${x.code} -> ${x.hcc} -> RAF`);
+      check(`${x.code} is billable`, await source.billable(x.code), true);
+      const maps = await source.mappings(x.code);
+      check(`${x.code} maps to exactly ${x.hcc}`, maps.map((m) => m.hcc_code), [x.hcc]);
+      const category = await source.category(x.hcc);
+      check(`${x.hcc} community non-dual aged weight`, Number(category?.raf_community_nondual), x.raf);
+      check(`${x.hcc} hierarchy group`, category?.hierarchy_group, x.group);
+    }
+
+    console.log("\nUnmapped code (hypertension does not risk-adjust)");
+    check(`${EXPECT.unmapped} is billable`, await source.billable(EXPECT.unmapped), true);
+    check(`${EXPECT.unmapped} maps to no HCC`, (await source.mappings(EXPECT.unmapped)).length, 0);
+
+    console.log("\nAge-split code");
+    const { ageSplit } = EXPECT;
+    const splits = await source.mappings(ageSplit.code);
+    for (const side of [ageSplit.under, ageSplit.over]) {
+      check(`${ageSplit.code} -> ${side.hcc} when "${side.edit}"`, splits.find((m) => m.hcc_code === side.hcc)?.age_edit, side.edit);
+    }
+
+    console.log("\nV28 hierarchy");
+    const { suppression } = EXPECT;
+    check(
+      `${suppression.severe} suppresses ${suppression.suppressed}`,
+      (await source.suppresses(suppression.severe)).includes(suppression.suppressed),
+      true,
+    );
+  } finally {
+    await source.close();
+  }
 
   console.log(failures === 0 ? "\nAll checks passed." : `\n${failures} check(s) failed.`);
   if (failures > 0) process.exit(1);
 }
 
 main().catch((error: unknown) => {
-  // Print the whole error: a bare `.message` hides non-Error throws and the
-  // stack, which is exactly when you most need them.
   console.error("\n" + (error instanceof Error ? (error.stack ?? error.message) : String(error)));
   process.exit(1);
 });

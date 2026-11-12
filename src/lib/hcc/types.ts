@@ -36,9 +36,23 @@ export interface SuppressionPair {
   suppressed: number;
 }
 
+/**
+ * A model rule outside the suppression table: `hcc` counts only when at least
+ * one of `requiresAnyOf` is also present (V28: HCC223 needs another
+ * heart-failure HCC). Applied before hierarchy trimming, as CMS does.
+ */
+export interface HccRequirement {
+  hcc: number;
+  requiresAnyOf: number[];
+  /** Shown to the learner when the rule drops the HCC. */
+  reason: string;
+}
+
 /** Everything the engine needs, already read out of Postgres. */
 export interface ReferenceSlice {
   mappings: CrosswalkMapping[];
   weights: Map<number, HccWeight>;
   suppressions: SuppressionPair[];
+  /** Model-specific requirements; see src/lib/hcc/model-rules.ts. */
+  requirements?: HccRequirement[];
 }

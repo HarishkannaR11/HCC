@@ -1,13 +1,44 @@
-import { getChart } from "@/lib/workspace-api";
-import { WorkspaceShell } from "@/components/workspace/WorkspaceShell";
+import type { Metadata } from "next";
+import { notFound } from "next/navigation";
+import { Encoder, type EncoderResume } from "@/components/workspace/Encoder";
+import { requireUser } from "@/lib/auth/session";
+import { createClient } from "@/lib/supabase/server";
+import { loadEncoderChart, loadHierarchy, loadOpenAttempt, lookupCodes, nextPublishedChartId } from "@/lib/practice/queries";
 
-export default async function PracticePage({
-  params,
-}: {
-  params: Promise<{ chartId: string }>;
-}) {
+export const metadata: Metadata = { title: "Coding" };
+
+/**
+ * The encoder. Everything here is read through the learner's own session:
+ * the published chart (RLS), public reference data, and the learner's own open
+ * attempt. The answer key is never read on this page.
+ */
+export default async function EncoderPage({ params }: PageProps<"/practice/[chartId]">) {
   const { chartId } = await params;
-  const chart = await getChart(chartId);
+  const user = await requireUser(`/practice/${chartId}`);
+  if (!/^[0-9a-f-]{36}$/i.test(chartId)) notFound();
 
-  return <WorkspaceShell chart={chart} />;
+  const db = await createClient();
+  const chart = await loadEncoderChart(db, chartId);
+  if (!chart) notFound();
+
+  const [hierarchy, open, nextChartId] = await Promise.all([
+    loadHierarchy(db, chart.paymentYear),
+    loadOpenAttempt(db, user.id, chartId),
+    nextPublishedChartId(db, chartId),
+  ]);
+
+  const saved = open ? await lookupCodes(db, chart.paymentYear, open.codes.map((c) => c.code)) : new Map();
+  const resume: EncoderResume = {
+    attemptId: open?.id ?? null,
+    startedAt: open?.startedAt ?? null,
+    mode: open?.mode ?? "practice",
+    timeLimitSeconds: open?.timeLimitSeconds ?? null,
+    assigned: (open?.codes ?? []).flatMap((c) => {
+      const info = saved.get(c.code);
+      return info ? [{ code: c.code, description: info.description, hccs: info.hccs, rationale: c.rationale }] : [];
+    }),
+    excerpts: Object.fromEntries((open?.codes ?? []).map((c) => [c.code, c.excerpt])),
+  };
+
+  return <Encoder chart={chart} hierarchy={hierarchy} nextChartId={nextChartId} resume={resume} />;
 }

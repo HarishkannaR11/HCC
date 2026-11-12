@@ -25,7 +25,7 @@ function referenceFixture(): ReferenceSlice {
       [37, { category: 37, label: "Diabetes with Chronic Complications", family: "diabetes", rafWeight: 0.166 }],
       [38, { category: 38, label: "Diabetes with No, Glycemic, or Unspecified Complications", family: "diabetes", rafWeight: 0.166 }],
       [329, { category: 329, label: "Chronic Kidney Disease, Moderate (Stage 3, Except 3B)", family: "kidney", rafWeight: 0.127 }],
-      [327, { category: 327, label: "Chronic Kidney Disease, Severe (Stage 4)", family: "kidney", rafWeight: 0.237 }],
+      [327, { category: 327, label: "Chronic Kidney Disease, Severe (Stage 4)", family: "kidney", rafWeight: 0.514 }],
       [280, { category: 280, label: "Chronic Obstructive Pulmonary Disease...", family: "chr-lung", rafWeight: 0.319 }],
       [22, { category: 22, label: "Breast, Prostate, and Other Cancers and Tumors (under 50)", family: "cancer", rafWeight: 0.363 }],
       [23, { category: 23, label: "Breast, Prostate, and Other Cancers and Tumors (50+)", family: "cancer", rafWeight: 0.186 }],
@@ -74,7 +74,7 @@ describe("computeCapturedRaf", () => {
     const stage3 = result.codes.find((c) => c.icd10Code === "N18.31")!.mappings[0];
     expect(stage3.counted).toBe(false);
     expect(stage3.suppressedBy).toBe(327);
-    expect(result.totalRaf).toBeCloseTo(0.237, 3);
+    expect(result.totalRaf).toBeCloseTo(0.514, 3);
   });
 
   it("excludes a mapping whose age edit the patient fails, and reports why", () => {

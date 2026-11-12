@@ -1,157 +1,138 @@
 "use client";
 
-import { useRef, useState } from "react";
-import { useWorkspaceStore } from "@/lib/workspace/store";
+import { useState } from "react";
+import type { EncoderChart } from "@/lib/practice/types";
 import { readBlockSelection, splitByRanges } from "@/lib/workspace/text-selection";
-import type { Chart, MeatElement } from "@/lib/workspace/types";
+import type { EvidenceLink } from "@/lib/workspace/types";
+import { useEncoder } from "./encoder-context";
 import { EvidencePopover } from "./EvidencePopover";
 
-const SECTION_LABEL_CLASS =
-  "m-0 mb-1 font-sans text-xs font-semibold uppercase tracking-[0.06em] text-muted";
-
 interface PendingSelection {
-  blockId: string;
+  paragraphId: string;
   start: number;
   end: number;
   text: string;
   anchor: { top: number; bottom: number; left: number };
 }
 
-export function ChartPane({ chart, className = "flex" }: { chart: Chart; className?: string }) {
-  const mode = useWorkspaceStore((s) => s.mode);
-  const claimedCodes = useWorkspaceStore((s) => s.claimedCodes);
-  const evidenceLinks = useWorkspaceStore((s) => s.evidenceLinks);
-  const addEvidenceLink = useWorkspaceStore((s) => s.addEvidenceLink);
+function formatDate(iso: string): string {
+  const [year, month, day] = iso.split("-");
+  return `${month}/${day}/${year}`;
+}
 
-  const containerRef = useRef<HTMLDivElement>(null);
+/**
+ * The note, read-only and selectable. Selecting text opens a popover to link
+ * it to an assigned code as that code's supporting documentation.
+ */
+export function ChartPane({ chart, className = "flex" }: { chart: EncoderChart; className?: string }) {
+  const assigned = useEncoder((s) => s.assigned);
+  const evidence = useEncoder((s) => s.evidence);
+  const linkEvidence = useEncoder((s) => s.linkEvidence);
   const [pending, setPending] = useState<PendingSelection | null>(null);
 
-  function handleMouseUp() {
-    // Let the browser finish updating window.getSelection() before reading it.
+  function captureSelection() {
+    // Let the browser settle window.getSelection() first.
     window.setTimeout(() => {
       const selection = readBlockSelection();
       if (!selection) return;
-      const range = window.getSelection()?.getRangeAt(0);
-      const rect = range?.getBoundingClientRect();
+      const rect = window.getSelection()?.getRangeAt(0).getBoundingClientRect();
       if (!rect) return;
-      setPending({ ...selection, anchor: { top: rect.top, bottom: rect.bottom, left: rect.left } });
+      setPending({
+        paragraphId: selection.blockId,
+        start: selection.start,
+        end: selection.end,
+        text: selection.text,
+        anchor: { top: rect.top, bottom: rect.bottom, left: rect.left },
+      });
     }, 0);
   }
 
-  function handleContainerMouseDown(e: React.MouseEvent) {
-    // Starting a fresh interaction dismisses any open popover; a genuine new
-    // selection re-opens it on the next mouseup.
-    if (pending && !(e.target as HTMLElement).closest("[data-evidence-popover]")) {
-      setPending(null);
-    }
-  }
-
-  function confirmEvidence(codeId: string, meat: MeatElement[]) {
+  function confirm(code: string) {
     if (!pending) return;
-    const sectionId = pending.blockId.split(".")[0];
-    addEvidenceLink({
-      codeId,
-      sectionId,
-      blockId: pending.blockId,
-      start: pending.start,
-      end: pending.end,
-      text: pending.text,
-      meat,
-    });
+    linkEvidence({ code, paragraphId: pending.paragraphId, start: pending.start, end: pending.end, text: pending.text });
     setPending(null);
     window.getSelection()?.removeAllRanges();
   }
 
+  const { patient } = chart;
+
   return (
-    <section
-      aria-label="Clinical chart"
-      className={`w-full lg:w-[580px] lg:shrink-0 box-border border-r border-border bg-surface flex-col min-h-0 ${className}`}
-    >
-      <div className="px-7 pt-5 pb-4 border-b border-border flex flex-col gap-1.5">
-        <div className="flex items-baseline justify-between">
+    <section aria-label="Clinical chart" className={`min-h-0 w-full flex-1 flex-col bg-surface ${className}`}>
+      <div className="flex flex-col gap-1.5 border-b border-border px-7 pb-4 pt-5">
+        <div className="flex items-baseline justify-between gap-4">
           <h1 className="m-0 text-lg font-semibold">{chart.title}</h1>
-          <span className="text-xs text-muted">Synthetic record</span>
+          <span className="shrink-0 text-xs text-muted">Synthetic record — no patient data</span>
         </div>
-        <div className="flex gap-4.5 text-[13px] text-ink/80 flex-wrap">
-          <span>Patient {chart.patientRef}</span>
+        <div className="flex flex-wrap gap-x-4 gap-y-1 text-[13px] text-ink/80">
+          <span className="font-medium text-ink">{patient.name}</span>
           <span>
-            {chart.patientAge} · {chart.patientSex === "male" ? "Male" : "Female"}
+            DOB {formatDate(patient.dob)} ({patient.age} y)
           </span>
-          <span>DOS {formatDate(chart.dateOfService)}</span>
-          <span>{chart.visitType}</span>
+          <span>{patient.sex === "male" ? "Male" : "Female"}</span>
+          <span className="font-mono">{patient.mrn}</span>
+        </div>
+        <div className="flex flex-wrap gap-x-4 gap-y-1 text-[13px] text-muted">
+          <span>DOS {formatDate(chart.encounterDate)}</span>
+          <span>{chart.providerName}</span>
+          <span>{chart.facilityName}</span>
         </div>
       </div>
-
-      {mode === "guided" && chart.hint && (
-        <div className="mx-7 mt-4 p-3.5 bg-accent-soft border border-accent-soft rounded-card text-[13px] leading-relaxed text-accent-ink">
-          Hint: {chart.hint}
-        </div>
-      )}
 
       <div
-        ref={containerRef}
-        onMouseUp={handleMouseUp}
-        onMouseDown={handleContainerMouseDown}
-        className="flex-1 overflow-y-auto px-7 pt-4.5 pb-7 font-serif text-[15px] leading-[1.65] text-ink flex flex-col gap-4.5"
+        onMouseUp={captureSelection}
+        onKeyUp={(e) => {
+          if (e.shiftKey) captureSelection();
+        }}
+        onMouseDown={(e) => {
+          if (pending && !(e.target as HTMLElement).closest("[data-evidence-popover]")) setPending(null);
+        }}
+        className="flex flex-1 flex-col gap-5 overflow-y-auto px-7 pb-8 pt-5 font-serif text-[15px] leading-[1.65] text-ink"
       >
-        {chart.body.sections.map((section) => (
+        {chart.sections.map((section) => (
           <div key={section.id}>
-            <h2 className={SECTION_LABEL_CLASS}>{section.heading}</h2>
-            {section.kind === "prose" ? (
-              section.blocks.map((block) => (
-                <p key={block.id} data-block-id={block.id} className="m-0">
-                  {renderSegments(block.id, block.text, evidenceLinks)}
+            <h2 className="m-0 mb-1 font-sans text-xs font-semibold uppercase tracking-[0.06em] text-muted">
+              {section.label}
+            </h2>
+            <div className="flex flex-col gap-1.5">
+              {section.paragraphs.map((p) => (
+                <p key={p.id} data-block-id={p.id} className="m-0 whitespace-pre-wrap">
+                  {renderHighlights(p.id, p.text, evidence)}
                 </p>
-              ))
-            ) : (
-              <ol className="m-0 pl-5 flex flex-col gap-2">
-                {section.blocks.map((block) => (
-                  <li key={block.id} data-block-id={block.id}>
-                    {renderSegments(block.id, block.text, evidenceLinks)}
-                  </li>
-                ))}
-              </ol>
-            )}
+              ))}
+            </div>
           </div>
         ))}
-        <p className="m-0 text-[13px] text-muted">{chart.body.signature}</p>
       </div>
 
-      {pending && (
+      {pending ? (
         <div data-evidence-popover>
           <EvidencePopover
             anchor={pending.anchor}
-            claimedCodes={claimedCodes}
-            onConfirm={confirmEvidence}
+            excerpt={pending.text}
+            codes={assigned.map((a) => a.code)}
+            onConfirm={confirm}
             onCancel={() => setPending(null)}
           />
         </div>
-      )}
+      ) : null}
     </section>
   );
 }
 
-function renderSegments(
-  blockId: string,
-  text: string,
-  evidenceLinks: { id: string; blockId: string; start: number; end: number }[],
-) {
-  const ranges = evidenceLinks.filter((l) => l.blockId === blockId);
+function renderHighlights(paragraphId: string, text: string, evidence: readonly EvidenceLink[]) {
+  const ranges = evidence.filter((e) => e.paragraphId === paragraphId);
   if (ranges.length === 0) return text;
-
-  const segments = splitByRanges(text, ranges);
-  return segments.map((segment, i) =>
+  return splitByRanges(text, ranges).map((segment, i) =>
     segment.evidenceId ? (
-      <mark key={i} className="bg-accent-soft text-inherit rounded-[3px] px-0.5">
+      <mark
+        key={i}
+        title={`Evidence for ${evidence.find((e) => e.id === segment.evidenceId)?.code ?? ""}`}
+        className="rounded-[3px] bg-accent-soft px-0.5 text-inherit"
+      >
         {segment.text}
       </mark>
     ) : (
       <span key={i}>{segment.text}</span>
     ),
   );
-}
-
-function formatDate(iso: string): string {
-  const [year, month, day] = iso.split("-");
-  return `${month}/${day}/${year}`;
 }
