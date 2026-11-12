@@ -55,7 +55,7 @@ export function buildInsights(
       id: `trap-${worstTrap.trap}`,
       kind: "weakness",
       title: `${TRAP_LABELS[worstTrap.trap]} traps catch you`,
-      detail: `You fell for ${worstTrap.hits} of the ${worstTrap.opportunities} ${TRAP_LABELS[worstTrap.trap].toLowerCase()} traps you have met (${pct(worstTrap.rate)}).`,
+      detail: `It caught you in ${worstTrap.hits} of the ${worstTrap.opportunities} charts that planted one (${pct(worstTrap.rate)}).`,
     });
   }
 
@@ -99,7 +99,7 @@ export function buildInsights(
       id: `strength-${strongTrap.trap}`,
       kind: "strength",
       title: `${TRAP_LABELS[strongTrap.trap]}: solid`,
-      detail: `You got past all ${strongTrap.opportunities} ${TRAP_LABELS[strongTrap.trap].toLowerCase()} traps you have met.`,
+      detail: `You got past it in all ${strongTrap.opportunities} charts that planted one.`,
     });
   }
 

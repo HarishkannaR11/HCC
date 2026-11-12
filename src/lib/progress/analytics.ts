@@ -3,6 +3,7 @@
  * Pure and deterministic: aggregate counts, no models.
  */
 import type { TrapType } from "@/lib/charts/constants";
+import { withinTimeLimit } from "@/lib/practice/types";
 import type { AttemptSummary } from "./types";
 
 const mean = (xs: readonly number[]) => (xs.length === 0 ? 0 : xs.reduce((a, b) => a + b, 0) / xs.length);
@@ -57,26 +58,27 @@ export function scoreTrend(attempts: readonly AttemptSummary[]): Trend {
 
 export interface TrapStat {
   trap: TrapType;
-  /** Times the learner fell for it. */
+  /** Charts where the learner fell for this kind of trap at least once. */
   hits: number;
-  /** Times it was on a chart they scored (fell for + got past). */
+  /** Charts they scored that had this kind of trap. */
   opportunities: number;
   rate: number;
 }
 
-/** Per trap type: how often the learner fell for it when it was there. Worst first. */
+/**
+ * Per trap type: in how many of the charts that planted it the learner fell
+ * for it. Counted once per chart, so a single mistake that both misses the
+ * right code and codes the planted wrong one (I50.22 for I50.23) is one hit,
+ * not two. Worst first.
+ */
 export function trapStats(attempts: readonly AttemptSummary[]): TrapStat[] {
   const stats = new Map<TrapType, { hits: number; opportunities: number }>();
   for (const a of attempts) {
-    for (const trap of a.trapsHit) {
-      const s = stats.get(trap) ?? { hits: 0, opportunities: 0 };
-      s.hits += 1;
-      s.opportunities += 1;
-      stats.set(trap, s);
-    }
-    for (const trap of a.trapsAvoided) {
+    const hit = new Set(a.trapsHit);
+    for (const trap of new Set([...a.trapsHit, ...a.trapsAvoided])) {
       const s = stats.get(trap) ?? { hits: 0, opportunities: 0 };
       s.opportunities += 1;
+      if (hit.has(trap)) s.hits += 1;
       stats.set(trap, s);
     }
   }
@@ -166,7 +168,7 @@ export function modeStats(attempts: readonly AttemptSummary[]): Record<"practice
     return {
       count: list.length,
       meanScore: mean(list.map((a) => a.scorePct)),
-      withinLimit: list.filter((a) => a.timeLimitSeconds !== null && a.durationSeconds !== null && a.durationSeconds <= a.timeLimitSeconds).length,
+      withinLimit: list.filter((a) => withinTimeLimit(a.durationSeconds, a.timeLimitSeconds)).length,
       meanSeconds: durations.length ? mean(durations) : null,
     };
   };

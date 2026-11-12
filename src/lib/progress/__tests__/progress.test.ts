@@ -84,15 +84,22 @@ describe("scoreTrend", () => {
 });
 
 describe("trapStats and familyStats", () => {
-  it("rates each trap by how often it was fallen for when present, worst first", () => {
+  it("rates each trap per chart that planted it, worst first", () => {
     const stats = trapStats([
       attempt({ trapsHit: ["status_vs_history"], trapsAvoided: ["missing_acuity"] }),
       attempt({ trapsHit: ["status_vs_history"], trapsAvoided: ["missing_acuity", "status_vs_history"] }),
+      attempt({ trapsAvoided: ["status_vs_history"] }),
     ]);
     expect(stats).toEqual([
       { trap: "status_vs_history", hits: 2, opportunities: 3, rate: 2 / 3 },
       { trap: "missing_acuity", hits: 0, opportunities: 2, rate: 0 },
     ]);
+  });
+
+  it("counts one mistake that misses the key code and codes the distractor as one hit", () => {
+    // I50.22 for I50.23: the key item and the distractor both carry missing_acuity.
+    const stats = trapStats([attempt({ trapsHit: ["missing_acuity", "missing_acuity"] })]);
+    expect(stats).toEqual([{ trap: "missing_acuity", hits: 1, opportunities: 1, rate: 1 }]);
   });
 
   it("groups missed and over-coded HCCs by family", () => {
@@ -114,9 +121,10 @@ describe("trapStats and familyStats", () => {
     const stats = modeStats([
       attempt({ mode: "timed", timeLimitSeconds: 600, durationSeconds: 590, scorePct: 60 }),
       attempt({ mode: "timed", timeLimitSeconds: 600, durationSeconds: 700, scorePct: 70 }),
+      attempt({ mode: "timed", timeLimitSeconds: 600, durationSeconds: 603, scorePct: 65 }), // auto-submit latency: within grace
       attempt({ scorePct: 90 }),
     ]);
-    expect(stats.timed).toMatchObject({ count: 2, meanScore: 65, withinLimit: 1 });
+    expect(stats.timed).toMatchObject({ count: 3, meanScore: 65, withinLimit: 2 });
     expect(stats.practice).toMatchObject({ count: 1, meanScore: 90 });
   });
 });
@@ -141,7 +149,7 @@ describe("buildInsights — the Phase 3 bar: after five charts, say something ne
 
   it("names the trap that keeps catching them", () => {
     expect(insights.find((i) => i.id === "trap-status_vs_history")?.detail).toBe(
-      "You fell for 3 of the 3 status vs. history traps you have met (100%).",
+      "It caught you in 3 of the 3 charts that planted one (100%).",
     );
   });
 

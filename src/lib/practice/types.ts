@@ -92,3 +92,14 @@ export type SubmitAttemptInput = z.input<typeof submitAttemptSchema>;
  * keep these two in step.
  */
 export const TIMED_LIMIT_SECONDS: Record<number, number> = { 1: 600, 2: 900, 3: 1200 };
+
+/**
+ * A timed attempt counts as within its limit up to this many seconds over:
+ * the auto-submit fires at 0:00, and the round trip to record it lands just
+ * after.
+ */
+export const TIMED_GRACE_SECONDS = 10;
+
+export function withinTimeLimit(durationSeconds: number | null, limitSeconds: number | null): boolean {
+  return durationSeconds !== null && limitSeconds !== null && durationSeconds <= limitSeconds + TIMED_GRACE_SECONDS;
+}

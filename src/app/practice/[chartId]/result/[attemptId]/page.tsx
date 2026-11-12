@@ -7,6 +7,7 @@ import { requireUser } from "@/lib/auth/session";
 import { TRAP_LABELS, type TrapType } from "@/lib/charts/constants";
 import { breakdownSchema, type Breakdown } from "@/lib/practice/breakdown";
 import { lookupCodes, nextPublishedChartId } from "@/lib/practice/queries";
+import { withinTimeLimit } from "@/lib/practice/types";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import type { CodeVerdict } from "@/lib/scoring/review";
@@ -98,8 +99,8 @@ export default async function ResultPage({ params }: PageProps<"/practice/[chart
             <p className="m-0 mt-1 text-[13px] text-muted">
               PY{b.paymentYear} · CMS-HCC V28 · patient {b.patient.age} y {b.patient.sex}
               {attempt.mode === "timed" && attempt.time_limit_seconds !== null && attempt.duration_seconds !== null
-                ? attempt.duration_seconds <= attempt.time_limit_seconds
-                  ? ` · Timed: ${formatDuration(attempt.duration_seconds)} of ${formatDuration(attempt.time_limit_seconds)}`
+                ? withinTimeLimit(attempt.duration_seconds, attempt.time_limit_seconds)
+                  ? ` · Timed: ${formatDuration(Math.min(attempt.duration_seconds, attempt.time_limit_seconds))} of ${formatDuration(attempt.time_limit_seconds)}`
                   : ` · Timed: over the ${formatDuration(attempt.time_limit_seconds)} limit by ${formatDuration(attempt.duration_seconds - attempt.time_limit_seconds)}`
                 : attempt.duration_seconds !== null
                   ? ` · ${formatDuration(attempt.duration_seconds)} on this chart`
