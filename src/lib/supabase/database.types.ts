@@ -197,6 +197,51 @@ export type Database = {
           },
         ];
       };
+      billing_events: {
+        Row: {
+          event_name: string;
+          id: string;
+          occurred_at: string | null;
+          outcome: string;
+          payload: NonNullable<Json>;
+          provider: string;
+          provider_subscription_id: string | null;
+          received_at: string;
+          user_id: string | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          event_name: string;
+          id: string;
+          occurred_at?: string | null;
+          outcome: string;
+          payload: NonNullable<Json>;
+          provider: string;
+          provider_subscription_id?: string | null;
+          received_at?: string;
+          user_id?: string | null;
+        };
+        Update: {
+          event_name?: string;
+          id?: string;
+          occurred_at?: string | null;
+          outcome?: string;
+          payload?: NonNullable<Json>;
+          provider?: string;
+          provider_subscription_id?: string | null;
+          received_at?: string;
+          user_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "billing_events_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       chart_sections: {
         Row: {
           chart_id: string;
@@ -565,9 +610,12 @@ export type Database = {
       subscriptions: {
         Row: {
           current_period_end: string | null;
+          last_event_at: string | null;
           plan: string;
           provider: string;
           provider_customer_id: string;
+          provider_status: string | null;
+          provider_subscription_id: string | null;
           status: Database["public"]["Enums"]["subscription_status"];
           updated_at: string;
           user_id: string;
@@ -575,18 +623,24 @@ export type Database = {
         ComputedFields: never;
         Insert: {
           current_period_end?: string | null;
+          last_event_at?: string | null;
           plan: string;
           provider: string;
           provider_customer_id: string;
+          provider_status?: string | null;
+          provider_subscription_id?: string | null;
           status: Database["public"]["Enums"]["subscription_status"];
           updated_at?: string;
           user_id: string;
         };
         Update: {
           current_period_end?: string | null;
+          last_event_at?: string | null;
           plan?: string;
           provider?: string;
           provider_customer_id?: string;
+          provider_status?: string | null;
+          provider_subscription_id?: string | null;
           status?: Database["public"]["Enums"]["subscription_status"];
           updated_at?: string;
           user_id?: string;
@@ -606,8 +660,31 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      apply_billing_event: {
+        Args: {
+          p_event_id: string;
+          p_event_name: string;
+          p_occurred_at: string;
+          p_payload: Json;
+          p_provider: string;
+          p_subscription: Json;
+          p_user_id: string;
+        };
+        Returns: string;
+      };
+      chart_access: { Args: { p_chart_id: string }; Returns: boolean };
+      free_chart_limit: { Args: Record<PropertyKey, never>; Returns: number };
+      has_full_access: { Args: { p_user_id: string }; Returns: boolean };
       icd10_dotted: { Args: { raw: string }; Returns: string };
       is_admin: { Args: Record<PropertyKey, never>; Returns: boolean };
+      my_entitlement: {
+        Args: Record<PropertyKey, never>;
+        Returns: {
+          free_limit: number;
+          free_used: number;
+          full_access: boolean;
+        }[];
+      };
       search_icd10_codes: {
         Args: {
           hcc_only?: boolean;
