@@ -111,6 +111,7 @@ describe("schema", () => {
         "attempt_codes",
         "attempt_results",
         "attempts",
+        "billing_events",
         "chart_sections",
         "charts",
         "daily_activity",
@@ -135,14 +136,18 @@ describe("schema", () => {
     try {
       const views = await db.query("select table_name from information_schema.views where table_schema = 'public'");
       expect(views.rows).toEqual([]);
-      // SECURITY DEFINER functions callable by API roles: only the two audited ones.
+      // SECURITY DEFINER functions callable by API roles: only these audited ones.
+      //   chart_access(chart): "may I open this chart?" from the caller's own
+      //     attempts and subscription; never touches keys or distractors.
+      //   my_entitlement(): the caller's own access flag and free-chart count.
+      // has_full_access(user) can look at anyone and is NOT callable by API roles.
       const definers = await db.query<{ name: string }>(
         `select p.proname as name from pg_proc p join pg_namespace n on n.oid = p.pronamespace
          where n.nspname = 'public' and p.prosecdef
            and (has_function_privilege('authenticated', p.oid, 'execute') or has_function_privilege('anon', p.oid, 'execute'))
          order by 1`,
       );
-      expect(definers.rows.map((r) => r.name)).toEqual(["handle_new_user", "is_admin"]);
+      expect(definers.rows.map((r) => r.name)).toEqual(["chart_access", "handle_new_user", "is_admin", "my_entitlement"]);
     } finally {
       await db.end();
     }
