@@ -5,6 +5,7 @@ import { SiteHeader } from "@/components/site-header";
 import { Table, TableCell, TableHead } from "@/components/ui/table";
 import { requireUser } from "@/lib/auth/session";
 import { DIFFICULTY_LABELS, SPECIALTIES } from "@/lib/charts/constants";
+import { canOpenChart } from "@/lib/billing/access";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Practice charts" };
@@ -36,7 +37,7 @@ export default async function PracticePage({ searchParams }: PageProps<"/practic
   if (filters.difficulty) query = query.eq("difficulty", filters.difficulty);
   if (filters.year) query = query.eq("payment_year", filters.year);
 
-  const [{ data: charts, error }, { data: attempts }, { data: years }] = await Promise.all([
+  const [{ data: charts, error }, { data: attempts }, { data: years }, { data: entitlement }] = await Promise.all([
     query,
     supabase
       .from("attempts")
@@ -44,7 +45,12 @@ export default async function PracticePage({ searchParams }: PageProps<"/practic
       .eq("user_id", user.id)
       .order("submitted_at", { ascending: false }),
     supabase.from("payment_years").select("year").eq("is_active", true).order("year", { ascending: false }),
+    supabase.rpc("my_entitlement"),
   ]);
+  // The paywall is enforced in Postgres (chart_access); this only labels the list.
+  const ent = entitlement?.[0] ?? { full_access: false, free_used: 0, free_limit: 5 };
+  const started = new Set((attempts ?? []).map((a) => a.chart_id));
+  const locked = (chartId: string) => !canOpenChart({ fullAccess: ent.full_access, startedChartIds: started, chartId });
   if (error) throw new Error(error.message);
 
   const history = new Map<string, { best: number | null; last: number | null; inProgress: boolean }>();
@@ -71,6 +77,18 @@ export default async function PracticePage({ searchParams }: PageProps<"/practic
             Synthetic progress notes. Every patient, provider and facility is invented.
           </p>
         </div>
+
+        {!ent.full_access ? (
+          <p className="m-0 flex flex-wrap items-center justify-between gap-2 rounded-card border border-border bg-surface px-4 py-3 text-[13px]">
+            <span>
+              Free plan: <b>{Math.min(ent.free_used, ent.free_limit)} of {ent.free_limit}</b> free charts used
+              {ent.free_used >= ent.free_limit ? ". Charts you have started stay open." : "."}
+            </span>
+            <Link href="/billing" className="font-medium text-accent-ink hover:underline">
+              Unlock the full library →
+            </Link>
+          </p>
+        ) : null}
 
         <form className="flex flex-wrap items-end gap-3 text-[13px]" method="get">
           <label className="flex flex-col gap-1">
@@ -135,9 +153,18 @@ export default async function PracticePage({ searchParams }: PageProps<"/practic
               return (
                 <tr key={chart.id}>
                   <TableCell className="font-medium">
-                    <Link href={`/practice/${chart.id}`} className="text-accent-ink hover:underline">
-                      {chart.title}
-                    </Link>
+                    {locked(chart.id) ? (
+                      <span className="text-ink/70">
+                        {chart.title}{" "}
+                        <Link href="/billing" className="ml-1 text-[12px] font-normal text-accent-ink hover:underline">
+                          Locked · subscribe
+                        </Link>
+                      </span>
+                    ) : (
+                      <Link href={`/practice/${chart.id}`} className="text-accent-ink hover:underline">
+                        {chart.title}
+                      </Link>
+                    )}
                     {h?.inProgress ? <span className="ml-2 text-[12px] text-muted">draft in progress</span> : null}
                   </TableCell>
                   <TableCell>{chart.specialty}</TableCell>

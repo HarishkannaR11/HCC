@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Encoder, type EncoderResume } from "@/components/workspace/Encoder";
+import { Paywall } from "@/components/paywall";
+import { SiteHeader } from "@/components/site-header";
 import { requireUser } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
 import { loadEncoderChart, loadHierarchy, loadOpenAttempt, lookupCodes, nextPublishedChartId } from "@/lib/practice/queries";
@@ -18,6 +20,25 @@ export default async function EncoderPage({ params }: PageProps<"/practice/[char
   if (!/^[0-9a-f-]{36}$/i.test(chartId)) notFound();
 
   const db = await createClient();
+  // The plan check comes first: a locked chart's text is never loaded (RLS
+  // would withhold it anyway).
+  const [{ data: access }, { data: listing }] = await Promise.all([
+    db.rpc("chart_access", { p_chart_id: chartId }),
+    db.from("charts").select("title").eq("id", chartId).eq("status", "published").maybeSingle(),
+  ]);
+  if (!listing) notFound();
+  if (!access) {
+    const { data: ent } = await db.rpc("my_entitlement");
+    return (
+      <div className="flex min-h-dvh flex-col">
+        <SiteHeader user={user} />
+        <main className="flex flex-1 items-center px-6 py-16">
+          <Paywall title={listing.title} freeLimit={ent?.[0]?.free_limit ?? 5} />
+        </main>
+      </div>
+    );
+  }
+
   const chart = await loadEncoderChart(db, chartId);
   if (!chart) notFound();
 

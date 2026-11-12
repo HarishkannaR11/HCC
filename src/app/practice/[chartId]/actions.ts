@@ -85,6 +85,13 @@ export async function startAttempt(input: unknown): Promise<StartedAttempt | Fai
     const again = await db.from("attempts").select(columns).eq("user_id", user.id).eq("chart_id", id.data).is("submitted_at", null).single();
     if (again.data) return started(again.data);
   }
+  if (error?.code === "42501") {
+    const { data: ent } = await db.rpc("my_entitlement");
+    const e = ent?.[0];
+    if (e && !e.full_access && e.free_used >= e.free_limit) {
+      return { error: `You have used your ${e.free_limit} free charts. Subscribe on the Billing page to open more of the library.` };
+    }
+  }
   if (error || !data) return { error: "This chart is not available for practice." };
   return started(data);
 }

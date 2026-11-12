@@ -17,6 +17,9 @@ export function SiteHeader({ user }: { user: SessionUser }) {
         <Link href="/practice" className="text-bg/80 hover:text-bg no-underline">
           Practice
         </Link>
+        <Link href="/billing" className="text-bg/80 hover:text-bg no-underline">
+          Billing
+        </Link>
         {user.role === "admin" ? (
           <Link href="/admin/charts" className="text-bg/80 hover:text-bg no-underline">
             Charts admin

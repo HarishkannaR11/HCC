@@ -11,6 +11,7 @@ import { loadProgress } from "@/lib/progress/load";
 import { recommendNextChart } from "@/lib/progress/recommend";
 import { computeStreaks, localDate } from "@/lib/progress/streaks";
 import { createClient } from "@/lib/supabase/server";
+import { canOpenChart } from "@/lib/billing/access";
 
 export const metadata: Metadata = { title: "Dashboard" };
 
@@ -58,7 +59,13 @@ export default async function DashboardPage() {
   const balance = codingBalance(attempts);
   const modes = modeStats(attempts);
   const insights = buildInsights(attempts, groupOf, groupLabel, (h) => `HCC${h}`);
-  const next = recommendNextChart({ charts: progress.charts, attempts, openDraftChartIds: progress.openDraftChartIds });
+  // Only recommend charts the learner's plan opens (Postgres enforces it; this keeps the advice honest).
+  const { data: entitlement } = await db.rpc("my_entitlement");
+  const ent = entitlement?.[0] ?? { full_access: false, free_used: 0, free_limit: 5 };
+  const started = new Set([...attempts.map((a) => a.chartId), ...progress.openDraftChartIds]);
+  const openable = progress.charts.filter((c) => canOpenChart({ fullAccess: ent.full_access, startedChartIds: started, chartId: c.id }));
+  const next = recommendNextChart({ charts: openable, attempts, openDraftChartIds: progress.openDraftChartIds });
+  const showUpgrade = !ent.full_access && openable.length < progress.charts.length;
 
   const dateFmt = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", timeZone: timezone });
   const trendData: TrendDatum[] = trend.points.map((p) => ({
@@ -82,6 +89,17 @@ export default async function DashboardPage() {
               From your scored charts. Days follow your time zone ({timezone}).
             </p>
           </div>
+          {!next && showUpgrade ? (
+            <div className="flex max-w-md flex-col gap-2 rounded-card border border-accent bg-accent-soft/40 px-4 py-3">
+              <span className="text-[12px] font-semibold uppercase tracking-wide text-accent-ink">Next up</span>
+              <span className="text-[13px] text-ink/80">
+                You have scored all {ent.free_limit} of your free charts. Subscribe to keep going with new ones.
+              </span>
+              <Link href="/billing" className="self-start rounded-[6px] bg-accent px-3 py-1.5 text-[13px] font-medium text-white">
+                See plans
+              </Link>
+            </div>
+          ) : null}
           {next ? (
             <div className="flex max-w-md flex-col gap-2 rounded-card border border-accent bg-accent-soft/40 px-4 py-3">
               <span className="text-[12px] font-semibold uppercase tracking-wide text-accent-ink">Next up</span>

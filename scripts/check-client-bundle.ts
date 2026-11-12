@@ -6,7 +6,9 @@
  *   - the literal value of SUPABASE_SERVICE_ROLE_KEY, when it is set;
  *   - the variable name itself (a sign server code was bundled for the client);
  *   - Supabase secret keys (sb_secret_...);
- *   - any JWT whose payload claims role "service_role".
+ *   - any JWT whose payload claims role "service_role";
+ *   - the billing provider's API key and webhook signing secret (values and
+ *     variable names), Phase 4.
  *
  * `server-only` on src/lib/supabase/service-role.ts already turns an import
  * from a Client Component into a build error; this is the second net.
@@ -37,6 +39,7 @@ function decodeJwtRole(token: string): string | null {
 function main(): void {
   loadEnv();
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
+  const billingSecrets = ["LEMONSQUEEZY_API_KEY", "LEMONSQUEEZY_WEBHOOK_SECRET"] as const;
   const findings: string[] = [];
   let scanned = 0;
 
@@ -49,6 +52,11 @@ function main(): void {
     if (serviceKey && serviceKey.length > 20 && text.includes(serviceKey)) findings.push(`${where}: SUPABASE_SERVICE_ROLE_KEY value`);
     if (text.includes("SUPABASE_SERVICE_ROLE_KEY")) findings.push(`${where}: SUPABASE_SERVICE_ROLE_KEY name`);
     if (/sb_secret_[A-Za-z0-9_-]{8,}/.test(text)) findings.push(`${where}: Supabase secret key (sb_secret_...)`);
+    for (const name of billingSecrets) {
+      const value = process.env[name]?.trim();
+      if (value && value.length >= 12 && text.includes(value)) findings.push(`${where}: ${name} value`);
+      if (text.includes(name)) findings.push(`${where}: ${name} name`);
+    }
     for (const match of text.matchAll(/eyJ[A-Za-z0-9_-]{10,}\.eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}/g)) {
       if (decodeJwtRole(match[0]) === "service_role") findings.push(`${where}: service_role JWT`);
     }
