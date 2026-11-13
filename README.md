@@ -8,11 +8,12 @@ Every chart is synthetic. The product uses ICD-10-CM and CMS-HCC data only
 (both published free by the US government). It contains no CPT content and
 claims no affiliation with any credentialing body.
 
-**Status:** Phase 3 (progress) complete: dashboard with accuracy trend,
-local-day streaks, per-trap and per-family weak spots, a next-chart
-recommendation, and timed mode. Phase 2 (encoder, deterministic scoring with
-V28 hierarchy trimming, result screen) before it. See `DECISIONS.md` for
-choices and deviations, and `CLAUDE.md` for the build plan.
+**Status:** Phase 4 (monetization) complete: five free charts, then a
+subscription through a merchant of record (Lemon Squeezy), with signed,
+idempotent webhooks and a `/billing` page. Before it: Phase 3 (dashboard,
+streaks, weak spots, timed mode) and Phase 2 (encoder, deterministic scoring
+with V28 hierarchy trimming, result screen). See `DECISIONS.md` for choices
+and deviations, and `CLAUDE.md` for the build plan.
 
 ## Stack
 
@@ -59,14 +60,24 @@ npm run dev
 2. Promote yourself: `npm run admin:grant -- you@example.com`
 3. Log out and back in. You land on `/admin/charts`.
 
+### Payments locally
+
+Set `BILLING_PROVIDER=fake` in `.env.local`. Subscribing then opens a local
+test checkout instead of Lemon Squeezy. It posts signed, Lemon-Squeezy-shaped
+webhooks to `/api/billing/webhook`, so the real verification path runs. Its
+page offers "webhook arrives first", "you return before the webhook" and
+"card declined". Once subscribed, `/billing` shows buttons that simulate a
+failed renewal, exhausted retries and the end of the paid period. Nothing is
+charged, and the fake refuses to run in a Vercel production deploy.
+
 ### Tests
 
 ```bash
 npm test               # unit: parser, HCC resolution, scoring engine (incl. the seed
                        # charts scored on the CMS-format fixture), schemas, compliance
 npm run test:rls       # integration: RLS through PostgREST and GraphQL, incl. the
-                       # practice loop (needs the local stack running and
-                       # `npm run db:seed:fixture`)
+                       # practice loop and the paywall/billing events (needs the
+                       # local stack running and `npm run db:seed:fixture`)
 npm run typecheck
 npm run lint
 npm run build          # also fails if a server secret reaches a client bundle
@@ -93,6 +104,21 @@ npm run build          # also fails if a server secret reaches a client bundle
    `NEXT_PUBLIC_`; the build fails if it reaches the browser.
 5. **First admin:** sign up, then `npm run admin:grant -- you@example.com`
    with `DATABASE_URL` set to the hosted pooler URI.
+6. **Payments (Lemon Squeezy).** In a store (use test mode first):
+   - Create one subscription product with two variants, monthly and annual.
+     Match their prices to `src/lib/billing/plans.ts`, which is display only.
+   - Add a webhook pointing at `https://<origin>/api/billing/webhook` with a
+     signing secret. Subscribe it to `subscription_created`,
+     `subscription_updated`, `subscription_cancelled`, `subscription_resumed`,
+     `subscription_expired`, `subscription_paused` and `subscription_unpaused`.
+     Payment events are accepted but carry no subscription state.
+   - Set these Vercel env vars (server only, never `NEXT_PUBLIC_`):
+     `LEMONSQUEEZY_API_KEY`, `LEMONSQUEEZY_STORE_ID`,
+     `LEMONSQUEEZY_VARIANT_MONTHLY`, `LEMONSQUEEZY_VARIANT_ANNUAL`,
+     `LEMONSQUEEZY_WEBHOOK_SECRET`. Leave `BILLING_PROVIDER` unset. The build
+     fails if the API key or webhook secret reaches a client bundle.
+   - Before launch, run one test-mode purchase, a cancellation and a failed
+     renewal end to end (see `DECISIONS.md`, Phase 4).
 
 ## Layout
 
@@ -115,6 +141,9 @@ src/components/workspace/  the encoder (chart pane, typeahead, assigned-code tra
 src/app/practice/      chart list, encoder, result screen, start/draft/submit actions
 src/app/api/codes/     ICD-10-CM typeahead (signed-in only)
 src/lib/supabase/      server client, service-role client (server-only), generated types
+src/lib/billing/       provider interface, Lemon Squeezy adapter, dev fake, access rule
+src/app/billing/       /billing, checkout/cancel/sync actions, success page (redirect race)
+src/app/api/billing/webhook/  signed provider webhooks -> apply_billing_event
 src/app/admin/charts/  chart + answer key editor (admin only)
 tests/rls/             RLS integration suite
 ```

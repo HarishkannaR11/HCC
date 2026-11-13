@@ -123,3 +123,35 @@ reasoning each. Newest phase at the bottom.
 ### Dashboard
 - **Learners now land on `/dashboard` after logging in.** Sign-up still lands on `/practice`, since a brand-new dashboard is empty.
 - **The accuracy chart uses one axis (0–100%), score plus a three-chart rolling mean**, with a hover/keyboard crosshair and a table view. Its two series were checked with the dataviz palette validator (all checks pass on the light surface). Trap rates are a meter list: one ratio per row, one hue.
+
+## Phase 4 — Monetization
+
+### Provider
+- **Lemon Squeezy is the first adapter, behind `src/lib/billing` (`BillingProvider`).** It is a merchant of record that sells to US buyers for a seller in India with no US entity, and its webhooks and API are simple. The rest of the app sees only the interface: checkout URL, verify and parse a webhook, cancel, fetch a user's subscription, management URL.
+- **Payout caveat:** per Lemon Squeezy's docs, sellers in India are paid out through PayPal unless invited to Stripe payouts. If a direct Indian bank payout matters, Paddle or Dodo Payments are the alternatives. Either needs a second adapter implementing the same interface, plus its status mapping. No other code changes.
+- **The live adapter has not been run against the real API.** The API host was unreachable from the build sandbox, so the adapter follows the documented request and response shapes and is covered by unit tests on recorded-shape payloads. **Before launch, do one test-mode purchase, cancellation and failed renewal in a Lemon Squeezy test store.**
+- **Prices ($19/month, $149/year) are placeholders** in `src/lib/billing/plans.ts`, for display only. What is charged is whatever the two Lemon Squeezy variants say, so keep the two in step.
+
+### Free tier and access
+- **Free tier = the first five distinct charts an account starts.** Learners choose which five, and can re-code them as often as they like, because re-coding is the learning loop. A sixth chart needs a subscription.
+- **Charts started while subscribed are not free.** They lock again when the subscription lapses. 0011 originally kept *any* started chart open, so a month of paying would have unlocked everything opened that month, for ever. 0012 fixes the free set to the first five (`free_chart_ids()`); 0011 itself was left as pushed.
+- **Enforced in Postgres, not the page.** `chart_access()` gates both reading `chart_sections` and inserting an attempt, in RLS. Chart titles and metadata stay listable, so the library can show what a subscription opens. Past result pages stay readable after a lapse, because they render from the stored scoring snapshot and not the chart text.
+- **Full access** = admin, or status `active`, `trialing` or `past_due`, or `cancelled` with `current_period_end` in the future. This is one SQL function (`has_full_access`), mirrored in `subscriptionGrantsAccess` for display only.
+  - **`past_due` keeps access** while the provider retries the card. Locking someone out over a card the provider is still retrying punishes a payment glitch.
+  - **Lemon Squeezy `unpaid` (all retries failed) maps to `expired`.** No access, and `/billing` says the renewal payment could not be collected.
+- **A cancelled subscription locks at period end without needing an event.** The rule compares `current_period_end` to `now()`, so a late or lost `subscription_expired` cannot extend access.
+
+### Webhooks
+- **Signature:** HMAC-SHA256 of the raw body with the signing secret, compared in constant time. If it fails, the response is 401 and nothing is recorded.
+- **Idempotency key** = `ls_` + SHA-256 of the raw body. Lemon Squeezy sends no event id, but a retry resends the identical body. `apply_billing_event` claims the key first (`billing_events` primary key), so a retry or a concurrent duplicate returns `duplicate` and changes nothing.
+- **Ordering:** each subscription row keeps `last_event_at`, and an event older than that is recorded as `stale` and not applied. An event about a *different*, non-live subscription never displaces a live one (an old subscription winding down after a re-subscribe).
+- **Retries:** our own failures return 500, so the provider retries (3× over about 2.5 minutes). The retry is safe because the event transaction rolled back. Events for no known user are kept as `unmatched` for support, not dropped. Invoice-type events are recorded as `ignored`.
+- **Which user:** `user_id` is passed at checkout as custom data. If it is missing, the user is matched by subscription id.
+
+### Checkout and the redirect race
+- **Webhook first:** the success page reads the subscription and says "You're subscribed".
+- **Buyer first:** the success page asks the provider directly once (`syncBilling`: by subscription id, else by the account's verified email), then refreshes every 2 s until access shows. After 90 s it gives up with a message and the "Refresh status" link on `/billing`. The webhook still lands whenever it arrives, and both paths go through the same idempotent `apply_billing_event`.
+- **Cancel** calls the provider's cancel and applies the returned state at once, so `/billing` is right before the `subscription_cancelled` webhook arrives. The webhook then arrives as a duplicate or a no-op.
+
+### Development
+- **`BILLING_PROVIDER=fake` is a local stand-in that posts signed, Lemon-Squeezy-shaped webhooks to our own `/api/billing/webhook`.** The real verify, parse, idempotency and ordering path therefore runs in development and E2E. It is refused when `VERCEL_ENV=production`. Its checkout page has "webhook first", "you return first" and "card declined". `/billing` gets buttons for a failed renewal, exhausted retries and period end.

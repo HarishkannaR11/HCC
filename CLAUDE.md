@@ -69,7 +69,7 @@ India to US customers, so no US-entity requirement).
    evidence highlighting, rationale, keyboard-first), `lib/scoring/` pure
    engine with tests before the result screen, result screen.
 3. **Progress** (done): dashboard, streaks, per-trap weakness, recommendation, timed mode.
-4. **Monetization**: 5 free charts, paywall, checkout, webhooks, `/billing`.
+4. **Monetization** (done): 5 free charts, paywall, checkout, webhooks, `/billing`.
 5. **Audit mode + hardening**: audit mode, error boundaries, search rate
    limits, Sentry, landing SEO, legal pages.
 

@@ -29,3 +29,20 @@ where only history is documented fires its trap explanation.
 **Verified:** after five scored charts the dashboard names a weak spot the
 learner would not guess. In the test run that was status vs. history (3 of
 3 charts), not the acuity slip that cost them most visibly.
+
+## Phase 4 — Monetization (done)
+- [x] Five free charts (the first five an account starts), then a paywall
+      enforced in RLS on chart text and attempt starts.
+- [x] Checkout through a merchant of record behind `src/lib/billing`
+      (Lemon Squeezy adapter; dev fake), `/billing`, cancel, payment portal.
+- [x] Webhook: signature, body-hash idempotency, ordering, retry-safe 500s.
+- [x] Webhook-before-redirect race: success page syncs then polls.
+
+**Verified (local, fake provider posting signed webhooks to the real
+endpoint):** purchase unlocks the full library in both race orders; a
+declined card changes nothing; a failed renewal (past_due) keeps access;
+exhausted retries lock back to the free five; a cancelled subscription keeps
+access until period end, then locks back, including charts started while
+subscribed. Bad signatures get 401, a redelivery is a duplicate, and a late
+older event is stale. Not yet run against a live Lemon Squeezy test store.
+
