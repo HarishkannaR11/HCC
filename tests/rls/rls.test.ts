@@ -6,6 +6,9 @@
  * or distractor row by any API path: direct select, filters, counts,
  * resource embedding, GraphQL, writes, or role escalation.
  *
+ * Phase 4 adds the paywall: five free charts, then a subscription, decided in
+ * Postgres and applied from billing events that only the server can write.
+ *
  * Runs against the local stack through the same public endpoints a browser
  * uses. Creates its own users and charts and removes them afterwards.
  */
@@ -139,7 +142,9 @@ describe("schema", () => {
       // SECURITY DEFINER functions callable by API roles: only these audited ones.
       //   chart_access(chart): "may I open this chart?" from the caller's own
       //     attempts and subscription; never touches keys or distractors.
-      //   my_entitlement(): the caller's own access flag and free-chart count.
+      //   my_entitlement(): the caller's own access flag, free-chart count and
+      //     free chart ids.
+      // free_chart_ids(user) can look at anyone and is NOT callable by API roles.
       // has_full_access(user) can look at anyone and is NOT callable by API roles.
       const definers = await db.query<{ name: string }>(
         `select p.proname as name from pg_proc p join pg_namespace n on n.oid = p.pronamespace
@@ -534,6 +539,218 @@ describe("progress and timed mode (Phase 3)", () => {
     expect(write.error?.code).toBe("42501");
     const zone = await users.learner.client.from("profiles").update({ timezone: "Asia/Tokyo" }).eq("id", users.learner.id);
     expect(zone.error?.code).toBe("42501");
+  });
+});
+
+describe("free tier, subscriptions and billing events (Phase 4)", () => {
+  // Its own learner and seven published charts, so the counts are exact.
+  const charts: string[] = [];
+  let payer = { id: "", client: anon };
+  const eventIds: string[] = [];
+  const subId = `rls-sub-${run}`;
+  let clock = Date.parse("2026-01-01T00:00:00Z");
+
+  /** Apply a provider event as the webhook would, with a strictly later time unless given. */
+  async function apply(
+    status: "active" | "trialing" | "past_due" | "cancelled" | "expired",
+    periodEnd: Date,
+    options: { id?: string; occurredAt?: string; userId?: string; subscriptionId?: string } = {},
+  ) {
+    const id = options.id ?? `rls-${run}-${eventIds.length}`;
+    eventIds.push(id);
+    clock += 60_000;
+    return service.rpc("apply_billing_event", {
+      p_event_id: id,
+      p_provider: "lemonsqueezy",
+      p_event_name: `subscription_${status}`,
+      p_occurred_at: options.occurredAt ?? new Date(clock).toISOString(),
+      p_user_id: options.userId ?? payer.id,
+      p_payload: { test: true },
+      p_subscription: {
+        provider_subscription_id: options.subscriptionId ?? subId,
+        provider_customer_id: `rls-cust-${run}`,
+        plan: "monthly",
+        status,
+        provider_status: status,
+        current_period_end: periodEnd.toISOString(),
+      },
+    });
+  }
+
+  const inDays = (days: number) => new Date(Date.now() + days * 86_400_000);
+  const start = (chart: string) => payer.client.from("attempts").insert({ chart_id: chart, user_id: payer.id }).select("id").single();
+  const canOpen = async (chart: string) => (await payer.client.rpc("chart_access", { p_chart_id: chart })).data;
+  const sections = async (chart: string) => (await payer.client.from("chart_sections").select("id").eq("chart_id", chart)).data ?? [];
+
+  beforeAll(async () => {
+    const email = `rls-payer-${run}@example.test`;
+    const { data, error } = await service.auth.admin.createUser({ email, password, email_confirm: true, user_metadata: { full_name: "RLS payer" } });
+    if (error || !data.user) throw error ?? new Error("createUser returned no user");
+    const client = createClient<Database>(env.url, env.anonKey, { auth: { persistSession: false, autoRefreshToken: false } });
+    const signIn = await client.auth.signInWithPassword({ email, password });
+    if (signIn.error) throw signIn.error;
+    payer = { id: data.user.id, client };
+
+    for (let i = 0; i < 7; i++) {
+      const chart = await service.from("charts").insert(chartFields(`RLS library ${i} ${run}`)).select("id").single();
+      if (chart.error) throw chart.error;
+      const id = chart.data.id;
+      const steps = [
+        await service.from("chart_sections").insert({ chart_id: id, section_type: "assessment_plan", content: `Library chart ${i}.`, sort_order: 5 }),
+        await service.from("answer_key_items").insert({ chart_id: id, icd10_code: "E11.22", is_required: true }),
+        await service.from("charts").update({ status: "published" }).eq("id", id),
+      ];
+      for (const step of steps) if (step.error) throw step.error;
+      charts.push(id);
+    }
+  });
+
+  afterAll(async () => {
+    await service.from("attempts").delete().eq("user_id", payer.id);
+    for (const id of charts) await service.from("charts").delete().eq("id", id);
+    if (eventIds.length > 0) await service.from("billing_events").delete().in("id", eventIds);
+    if (payer.id) await service.auth.admin.deleteUser(payer.id);
+  });
+
+  it("opens any five distinct charts free, then no new one, in the chart text as well as attempts", async () => {
+    for (const chart of charts.slice(0, 5)) expect((await start(chart)).error).toBeNull();
+
+    const sixth = await start(charts[5]);
+    expect(sixth.error?.code).toBe("42501");
+    expect(await canOpen(charts[5])).toBe(false);
+    expect(await sections(charts[5])).toEqual([]);
+    // The title stays listable, so the library can show what a subscription opens.
+    const { data: listed } = await payer.client.from("charts").select("id").eq("id", charts[5]);
+    expect(listed).toHaveLength(1);
+
+    expect(await canOpen(charts[0])).toBe(true);
+    expect(await sections(charts[0])).toHaveLength(1);
+
+    const { data: ent } = await payer.client.rpc("my_entitlement");
+    expect(ent?.[0]?.full_access).toBe(false);
+    expect(ent?.[0]?.free_used).toBe(5);
+    expect(ent?.[0]?.free_limit).toBe(5);
+    expect([...(ent?.[0]?.free_chart_ids ?? [])].sort()).toEqual(charts.slice(0, 5).sort());
+  });
+
+  it("lets a free learner re-attempt one of their five", async () => {
+    const { data: open } = await payer.client.from("attempts").select("id").eq("chart_id", charts[0]).single();
+    const submitted = await service.rpc("submit_scored_attempt", {
+      p_attempt_id: open!.id,
+      p_user_id: payer.id,
+      p_timezone: "UTC",
+      p_codes: [],
+      p_result: { captured: [], missed: ["HCC37"], over_coded: [], precision: 1, recall: 0, raf_user: 0, raf_key: 0.166, raf_delta: -0.166, score_pct: 30 },
+    });
+    expect(submitted.error).toBeNull();
+    expect((await start(charts[0])).error).toBeNull();
+  });
+
+  it("opens the whole library on an active subscription, and keeps it open while a renewal is retried", async () => {
+    expect((await apply("active", inDays(30))).data).toBe("applied");
+    expect(await canOpen(charts[5])).toBe(true);
+    expect((await start(charts[5])).error).toBeNull();
+    expect(await sections(charts[6])).toHaveLength(1);
+    expect((await payer.client.rpc("my_entitlement")).data?.[0]?.full_access).toBe(true);
+
+    // The learner sees their own subscription row, and only theirs.
+    const { data: own } = await payer.client.from("subscriptions").select("user_id, status");
+    expect(own).toEqual([{ user_id: payer.id, status: "active" }]);
+
+    expect((await apply("past_due", inDays(30))).data).toBe("applied");
+    expect(await canOpen(charts[6])).toBe(true);
+  });
+
+  it("keeps a cancelled subscription open until the paid period ends, then locks back to the free five", async () => {
+    expect((await apply("cancelled", inDays(10))).data).toBe("applied");
+    expect(await canOpen(charts[6])).toBe(true);
+
+    // The period ends: same status, an end date in the past.
+    expect((await apply("cancelled", inDays(-1))).data).toBe("applied");
+    expect((await payer.client.rpc("my_entitlement")).data?.[0]?.full_access).toBe(false);
+    // Started while subscribed, so it is not one of the free five: locked again.
+    expect(await canOpen(charts[5])).toBe(false);
+    expect(await sections(charts[5])).toEqual([]);
+    expect(await canOpen(charts[6])).toBe(false);
+    // The free five stay open.
+    expect(await canOpen(charts[1])).toBe(true);
+    expect(await sections(charts[1])).toHaveLength(1);
+  });
+
+  it("locks an expired subscription (the provider gave up retrying)", async () => {
+    expect((await apply("active", inDays(30))).data).toBe("applied");
+    expect(await canOpen(charts[6])).toBe(true);
+    expect((await apply("expired", inDays(-1))).data).toBe("applied");
+    expect(await canOpen(charts[6])).toBe(false);
+  });
+
+  it("applies each event once, ignores late older events, and never lets an old subscription displace a live one", async () => {
+    expect((await apply("active", inDays(30))).data).toBe("applied");
+    const id = `rls-${run}-dup`;
+    expect((await apply("active", inDays(31), { id })).data).toBe("applied");
+    expect((await apply("expired", inDays(-1), { id })).data).toBe("duplicate");
+
+    // An event from before the newest one applied, delivered late.
+    expect((await apply("expired", inDays(-1), { occurredAt: "2025-01-01T00:00:00Z" })).data).toBe("stale");
+
+    // A different, older subscription winding down.
+    expect((await apply("expired", inDays(-1), { subscriptionId: `${subId}-old` })).data).toBe("stale");
+
+    const { data: row } = await service.from("subscriptions").select("status, provider_subscription_id").eq("user_id", payer.id).single();
+    expect(row).toEqual({ status: "active", provider_subscription_id: subId });
+    expect(await canOpen(charts[6])).toBe(true);
+  });
+
+  it("finds the user from the subscription when the event carries no usable user id, and records unmatched events", async () => {
+    // A renewal whose custom data was lost: matched by subscription id.
+    expect((await apply("active", inDays(60), { userId: randomUUID() })).data).toBe("applied");
+
+    const stranger = await apply("active", inDays(30), { userId: randomUUID(), subscriptionId: `rls-unknown-${run}` });
+    expect(stranger.data).toBe("unmatched");
+    const { data: ledger } = await service.from("billing_events").select("outcome, user_id").eq("id", eventIds.at(-1)!).single();
+    expect(ledger).toEqual({ outcome: "unmatched", user_id: null });
+
+    const invoice = await service.rpc("apply_billing_event", {
+      p_event_id: `rls-${run}-invoice`,
+      p_provider: "lemonsqueezy",
+      p_event_name: "subscription_payment_success",
+      p_occurred_at: new Date().toISOString(),
+      p_user_id: payer.id,
+      p_payload: {},
+      p_subscription: null,
+    });
+    eventIds.push(`rls-${run}-invoice`);
+    expect(invoice.data).toBe("ignored");
+  });
+
+  it("lets no learner apply events, read the ledger, check others' access or write a subscription", async () => {
+    const forged = await payer.client.rpc("apply_billing_event", {
+      p_event_id: `rls-${run}-forged`,
+      p_provider: "lemonsqueezy",
+      p_event_name: "subscription_created",
+      p_occurred_at: new Date().toISOString(),
+      p_user_id: users.learner.id,
+      p_payload: {},
+      p_subscription: { provider_subscription_id: "forged", plan: "monthly", status: "active", current_period_end: inDays(365).toISOString() },
+    });
+    expect(forged.error?.code).toBe("42501");
+    expect((await users.learner.client.rpc("chart_access", { p_chart_id: charts[6] })).data).toBe(true); // a free slot, not the forgery
+    expect((await service.from("subscriptions").select("user_id").eq("user_id", users.learner.id)).data).toEqual([]);
+
+    const ledger = await payer.client.from("billing_events").select("id").limit(1);
+    expect(ledger.data ?? []).toEqual([]);
+    expect(ledger.error?.code).toBe("42501");
+
+    expect((await payer.client.rpc("has_full_access", { p_user_id: users.admin.id })).error?.code).toBe("42501");
+    expect((await payer.client.rpc("free_chart_ids", { p_user_id: users.learner.id })).error?.code).toBe("42501");
+
+    const extend = await payer.client.from("subscriptions").update({ current_period_end: inDays(3650).toISOString() }).eq("user_id", payer.id);
+    expect(extend.error?.code).toBe("42501");
+  });
+
+  it("gives an admin the full library without a subscription", async () => {
+    expect((await users.admin.client.rpc("chart_access", { p_chart_id: charts[6] })).data).toBe(true);
+    expect((await users.admin.client.rpc("my_entitlement")).data?.[0]?.full_access).toBe(true);
   });
 });
 

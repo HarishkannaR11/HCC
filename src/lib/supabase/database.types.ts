@@ -673,6 +673,7 @@ export type Database = {
         Returns: string;
       };
       chart_access: { Args: { p_chart_id: string }; Returns: boolean };
+      free_chart_ids: { Args: { p_user_id: string }; Returns: string[] };
       free_chart_limit: { Args: Record<PropertyKey, never>; Returns: number };
       has_full_access: { Args: { p_user_id: string }; Returns: boolean };
       icd10_dotted: { Args: { raw: string }; Returns: string };
@@ -680,6 +681,7 @@ export type Database = {
       my_entitlement: {
         Args: Record<PropertyKey, never>;
         Returns: {
+          free_chart_ids: string[];
           free_limit: number;
           free_used: number;
           full_access: boolean;

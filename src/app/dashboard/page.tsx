@@ -61,9 +61,9 @@ export default async function DashboardPage() {
   const insights = buildInsights(attempts, groupOf, groupLabel, (h) => `HCC${h}`);
   // Only recommend charts the learner's plan opens (Postgres enforces it; this keeps the advice honest).
   const { data: entitlement } = await db.rpc("my_entitlement");
-  const ent = entitlement?.[0] ?? { full_access: false, free_used: 0, free_limit: 5 };
-  const started = new Set([...attempts.map((a) => a.chartId), ...progress.openDraftChartIds]);
-  const openable = progress.charts.filter((c) => canOpenChart({ fullAccess: ent.full_access, startedChartIds: started, chartId: c.id }));
+  const ent = entitlement?.[0] ?? { full_access: false, free_used: 0, free_limit: 5, free_chart_ids: [] };
+  const freeChartIds = new Set(ent.free_chart_ids);
+  const openable = progress.charts.filter((c) => canOpenChart({ fullAccess: ent.full_access, freeChartIds, chartId: c.id }));
   const next = recommendNextChart({ charts: openable, attempts, openDraftChartIds: progress.openDraftChartIds });
   const showUpgrade = !ent.full_access && openable.length < progress.charts.length;
 

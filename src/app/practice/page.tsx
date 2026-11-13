@@ -48,9 +48,9 @@ export default async function PracticePage({ searchParams }: PageProps<"/practic
     supabase.rpc("my_entitlement"),
   ]);
   // The paywall is enforced in Postgres (chart_access); this only labels the list.
-  const ent = entitlement?.[0] ?? { full_access: false, free_used: 0, free_limit: 5 };
-  const started = new Set((attempts ?? []).map((a) => a.chart_id));
-  const locked = (chartId: string) => !canOpenChart({ fullAccess: ent.full_access, startedChartIds: started, chartId });
+  const ent = entitlement?.[0] ?? { full_access: false, free_used: 0, free_limit: 5, free_chart_ids: [] };
+  const freeChartIds = new Set(ent.free_chart_ids);
+  const locked = (chartId: string) => !canOpenChart({ fullAccess: ent.full_access, freeChartIds, chartId });
   if (error) throw new Error(error.message);
 
   const history = new Map<string, { best: number | null; last: number | null; inProgress: boolean }>();
@@ -82,7 +82,7 @@ export default async function PracticePage({ searchParams }: PageProps<"/practic
           <p className="m-0 flex flex-wrap items-center justify-between gap-2 rounded-card border border-border bg-surface px-4 py-3 text-[13px]">
             <span>
               Free plan: <b>{Math.min(ent.free_used, ent.free_limit)} of {ent.free_limit}</b> free charts used
-              {ent.free_used >= ent.free_limit ? ". Charts you have started stay open." : "."}
+              {ent.free_used >= ent.free_limit ? ". Your first five stay open." : "."}
             </span>
             <Link href="/billing" className="font-medium text-accent-ink hover:underline">
               Unlock the full library →

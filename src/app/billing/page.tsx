@@ -36,7 +36,7 @@ export default async function BillingPage({ searchParams }: PageProps<"/billing"
     db.rpc("my_entitlement"),
     db.from("subscriptions").select("plan, status, provider_status, current_period_end, provider_subscription_id").maybeSingle(),
   ]);
-  const ent = entitlement?.[0] ?? { full_access: false, free_used: 0, free_limit: 5 };
+  const ent = entitlement?.[0] ?? { full_access: false, free_used: 0, free_limit: 5, free_chart_ids: [] };
   const provider = billingProvider();
   const now = new Date();
   const subscribed = subscriptionGrantsAccess(sub ?? null, now);
@@ -99,7 +99,7 @@ export default async function BillingPage({ searchParams }: PageProps<"/billing"
               </p>
               <p className="m-0 text-[13px] text-muted">
                 {ent.free_used >= ent.free_limit
-                  ? "You can keep re-coding the charts you have started. Subscribe to open the rest of the library."
+                  ? "Your first five charts stay open to re-code as often as you like. Subscribe to open the rest of the library."
                   : `Any ${ent.free_limit} charts are free, and you can re-code those as often as you like.`}
                 {sub && (sub.status === "expired" || sub.status === "paused" || sub.status === "cancelled")
                   ? ` Your ${planName.toLowerCase()} subscription ended${sub.provider_status === "unpaid" ? " after the renewal payment could not be collected" : ""}.`

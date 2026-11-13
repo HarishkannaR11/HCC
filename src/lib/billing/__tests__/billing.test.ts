@@ -123,15 +123,16 @@ describe("subscriptionGrantsAccess (mirrors has_full_access in 0011)", () => {
 });
 
 describe("canOpenChart (mirrors chart_access in 0011)", () => {
-  const started = new Set(["a", "b", "c", "d", "e"]);
+  const free = new Set(["a", "b", "c", "d", "e"]);
   it("allows any chart while free slots remain", () => {
-    expect(canOpenChart({ fullAccess: false, startedChartIds: new Set(["a"]), chartId: "z" })).toBe(true);
+    expect(canOpenChart({ fullAccess: false, freeChartIds: new Set(["a"]), chartId: "z" })).toBe(true);
   });
-  it(`allows the ${FREE_CHART_LIMIT} charts already started, and nothing new, once the free slots are used`, () => {
-    expect(canOpenChart({ fullAccess: false, startedChartIds: started, chartId: "c" })).toBe(true);
-    expect(canOpenChart({ fullAccess: false, startedChartIds: started, chartId: "z" })).toBe(false);
+  it(`keeps only the first ${FREE_CHART_LIMIT} charts open once the free slots are used`, () => {
+    expect(canOpenChart({ fullAccess: false, freeChartIds: free, chartId: "c" })).toBe(true);
+    // e.g. a chart started while subscribed: not one of the free five, so it locks again.
+    expect(canOpenChart({ fullAccess: false, freeChartIds: free, chartId: "z" })).toBe(false);
   });
   it("allows everything with full access", () => {
-    expect(canOpenChart({ fullAccess: true, startedChartIds: started, chartId: "z" })).toBe(true);
+    expect(canOpenChart({ fullAccess: true, freeChartIds: free, chartId: "z" })).toBe(true);
   });
 });

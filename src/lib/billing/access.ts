@@ -20,7 +20,11 @@ export function subscriptionGrantsAccess(sub: SubscriptionState | null, now: Dat
   return false;
 }
 
-/** May this learner open this chart? Mirrors chart_access(). */
-export function canOpenChart(input: { fullAccess: boolean; startedChartIds: ReadonlySet<string>; chartId: string }): boolean {
-  return input.fullAccess || input.startedChartIds.has(input.chartId) || input.startedChartIds.size < FREE_CHART_LIMIT;
+/**
+ * May this learner open this chart? Mirrors chart_access(). `freeChartIds` are
+ * the first five distinct charts they ever started (my_entitlement()); only
+ * those stay open without a subscription.
+ */
+export function canOpenChart(input: { fullAccess: boolean; freeChartIds: ReadonlySet<string>; chartId: string }): boolean {
+  return input.fullAccess || input.freeChartIds.has(input.chartId) || input.freeChartIds.size < FREE_CHART_LIMIT;
 }
