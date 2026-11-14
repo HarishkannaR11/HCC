@@ -282,6 +282,13 @@ function ageBand(edit: string | null): { operator: string; threshold: number } |
  *
  * The collapse is asserted, not assumed: a genuinely conflicting duplicate in a
  * future release fails loudly instead of silently dropping half a mapping.
+ *
+ * A payment year's dates of service straddle two ICD-10-CM fiscal years, so
+ * CMS also keeps codes that the newer fiscal year expanded into children
+ * (PY2026: D71, E72.53 and G35, billable in FY2025, headers in FY2026), next
+ * to those children on the same HCC. The code set here is the newer year's, in
+ * which such a code cannot be submitted, so its row is skipped -- but only when
+ * a mapped child carries the same HCC. Any other header still fails.
  */
 function buildMap(
   mappings: string,
@@ -291,14 +298,21 @@ function buildMap(
 ): MapRow[] {
   const records = parseCsvRecords(mappings);
   const groups = new Map<string, MapRow[]>();
+  const parsed = records.map((r) => ({ r, code: formatIcd10(r["ICD10"]), hcc: Number(r["CC"]) }));
+  const mappedBillable = parsed.filter((p) => validCodes.get(p.code)?.is_billable);
+  const retired = new Set<string>();
 
-  for (const r of records) {
-    const code = formatIcd10(r["ICD10"]);
-    const hcc = Number(r["CC"]); // CMS writes these as "92.0"
+  for (const { r, code, hcc } of parsed) {
+    // CMS writes CCs as "92.0".
     assert(Number.isInteger(hcc), `non-integer CC "${r["CC"]}" for ${code}`);
     const known = validCodes.get(code);
     assert(known, `crosswalk references unknown code ${code}`);
-    assert(known.is_billable, `crosswalk maps non-billable header ${code}`);
+    if (!known.is_billable) {
+      const expanded = mappedBillable.some((child) => child.code.startsWith(code) && child.hcc === hcc);
+      assert(expanded, `crosswalk maps non-billable header ${code}`);
+      retired.add(code);
+      continue;
+    }
     assert(validHccs.has(hcc), `crosswalk references unknown HCC ${hcc}`);
 
     const key = `${code}|${hcc}`;
@@ -339,6 +353,9 @@ function buildMap(
   }
 
   log(`  icd_hcc_map: collapsed ${collapsed} exhaustive age-band duplicates`);
+  if (retired.size > 0) {
+    log(`  icd_hcc_map: skipped ${retired.size} codes that are headers this year, mapped through their children (${[...retired].sort().join(", ")})`);
+  }
   return rows;
 }
 

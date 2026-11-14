@@ -155,3 +155,8 @@ reasoning each. Newest phase at the bottom.
 
 ### Development
 - **`BILLING_PROVIDER=fake` is a local stand-in that posts signed, Lemon-Squeezy-shaped webhooks to our own `/api/billing/webhook`.** The real verify, parse, idempotency and ordering path therefore runs in development and E2E. It is refused when `VERCEL_ENV=production`. Its checkout page has "webhook first", "you return first" and "card declined". `/billing` gets buttons for a failed renewal, exhausted retries and period end.
+
+## Deployment
+
+- **The official PY2026 files tripped a Phase 1 parser check.** CMS's crosswalk keeps D71, E72.53 and G35, which were billable in FY2025 and are headers in FY2026, next to their FY2026 children on the same HCC. The parser now skips such a row only when a mapped child carries the same HCC, so learners coding G35.A–G35.D still get HCC198. Any other header still fails. The fixture never contained the case.
+

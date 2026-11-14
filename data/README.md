@@ -50,6 +50,13 @@ npm run db:seed:fixture
 
 ### Quirks the parser handles explicitly
 
+**Codes retired into headers.** PY2026 dates of service straddle FY2025 and
+FY2026, so CMS keeps three FY2025 codes that FY2026 expanded (`D71`, `E72.53`,
+`G35`) beside their new children, on the same HCC. In the FY2026 code set they
+are headers and cannot be submitted, so their rows are skipped (8,355 rows over
+8,016 codes load). The parser allows this only when a mapped child carries the
+same HCC; any other header in the crosswalk still fails the build.
+
 **FY2026 added the QA0 block.** Twenty neurodevelopmental codes tied to genetic
 variants (`QA0.0101`, SCN2A-related neurodevelopmental disorder, and so on) are
 the first ICD-10-CM codes with a *letter* in the second position.

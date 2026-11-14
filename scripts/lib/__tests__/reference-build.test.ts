@@ -70,6 +70,25 @@ describe("buildReference (PY2026 V28 fixture)", () => {
     );
   });
 
+  it("skips a code the newer fiscal year expanded, when its mapped children carry the same HCC", () => {
+    // As CMS does for G35 -> G35.A..G35.D in PY2026: the old code stays in the crosswalk.
+    const files = fixtureFiles();
+    files.mappings += "E11,37.0,,,\n";
+    const log: string[] = [];
+    const withRetired = buildReference(files, { paymentYear: 2026, model: "V28", expectFullRelease: false, log: (l) => log.push(l) });
+    expect(withRetired.icd_hcc_map.filter((m) => m.code === "E11")).toEqual([]);
+    expect(withRetired.icd_hcc_map).toHaveLength(release.icd_hcc_map.length);
+    expect(log.join("\n")).toMatch(/skipped 1 codes that are headers this year.*\(E11\)/);
+  });
+
+  it("still fails loudly on a header whose children do not carry that HCC", () => {
+    const files = fixtureFiles();
+    files.mappings += "I50,37.0,,,\n";
+    expect(() => buildReference(files, { paymentYear: 2026, model: "V28", expectFullRelease: false })).toThrow(
+      /non-billable header I50/,
+    );
+  });
+
   it("fails loudly on a crosswalk code missing from the order file", () => {
     const files = fixtureFiles();
     files.mappings += "Z9999,38.0,,,\n";
