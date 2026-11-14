@@ -159,4 +159,7 @@ reasoning each. Newest phase at the bottom.
 ## Deployment
 
 - **The official PY2026 files tripped a Phase 1 parser check.** CMS's crosswalk keeps D71, E72.53 and G35, which were billable in FY2025 and are headers in FY2026, next to their FY2026 children on the same HCC. The parser now skips such a row only when a mapped child carries the same HCC, so learners coding G35.A–G35.D still get HCC198. Any other header still fails. The fixture never contained the case.
+- **Production database = the existing Supabase project "HCC"**, which the Vercel project `hcc` already uses through the Vercel–Supabase integration (the integration manages its keys). Migrations 0002–0012 were applied through the Supabase Management API and recorded in `supabase_migrations.schema_migrations`, so `supabase db push` carries on from 0013. The Phase 0 tables were backed up before 0004 dropped them.
+- **Reference data was loaded with the real loader from the official CMS/CDC files**, then copied row for row. Checksums of every table match the locally verified load.
+- **`SITE_URL` (production) = `https://hcc-iota.vercel.app`**, and Supabase auth's site URL and redirect allow-list match it. The confirmation email keeps Supabase's default template, because the free plan locks templates until custom SMTP is configured.
 
