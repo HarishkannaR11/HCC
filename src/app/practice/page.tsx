@@ -70,7 +70,7 @@ export default async function PracticePage({ searchParams }: PageProps<"/practic
   return (
     <div className="min-h-dvh flex flex-col">
       <SiteHeader user={user} />
-      <main className="flex-1 w-full max-w-5xl mx-auto px-6 py-8 flex flex-col gap-6">
+      <main className="flex-1 w-full max-w-5xl mx-auto px-4 py-6 sm:px-6 sm:py-8 flex flex-col gap-6">
         <div>
           <h1 className="m-0 text-xl font-semibold">Practice charts</h1>
           <p className="m-0 mt-1 text-[13px] text-muted">
@@ -140,11 +140,11 @@ export default async function PracticePage({ searchParams }: PageProps<"/practic
           <thead>
             <tr>
               <TableHead>Chart</TableHead>
-              <TableHead>Specialty</TableHead>
+              <TableHead className="hidden sm:table-cell">Specialty</TableHead>
               <TableHead>Difficulty</TableHead>
-              <TableHead>Year</TableHead>
+              <TableHead className="hidden sm:table-cell">Year</TableHead>
               <TableHead>Best</TableHead>
-              <TableHead>Last</TableHead>
+              <TableHead className="hidden sm:table-cell">Last</TableHead>
             </tr>
           </thead>
           <tbody>
@@ -166,12 +166,13 @@ export default async function PracticePage({ searchParams }: PageProps<"/practic
                       </Link>
                     )}
                     {h?.inProgress ? <span className="ml-2 text-[12px] text-muted">draft in progress</span> : null}
+                    <span className="mt-0.5 block text-[12px] font-normal text-muted sm:hidden">{chart.specialty}</span>
                   </TableCell>
-                  <TableCell>{chart.specialty}</TableCell>
+                  <TableCell className="hidden sm:table-cell">{chart.specialty}</TableCell>
                   <TableCell>{DIFFICULTY_LABELS[chart.difficulty as 1 | 2 | 3] ?? chart.difficulty}</TableCell>
-                  <TableCell>PY{chart.payment_year}</TableCell>
+                  <TableCell className="hidden sm:table-cell">PY{chart.payment_year}</TableCell>
                   <TableCell className="font-mono">{h?.best != null ? `${h.best.toFixed(0)}%` : "—"}</TableCell>
-                  <TableCell className="font-mono">{h?.last != null ? `${h.last.toFixed(0)}%` : "—"}</TableCell>
+                  <TableCell className="hidden font-mono sm:table-cell">{h?.last != null ? `${h.last.toFixed(0)}%` : "—"}</TableCell>
                 </tr>
               );
             })}

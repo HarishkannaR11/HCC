@@ -46,11 +46,11 @@ export function EncoderTopBar({
   const remaining = timed && limit !== null && elapsed !== null ? limit - elapsed : null;
 
   return (
-    <header className="flex h-14 shrink-0 items-center gap-5 bg-topbar px-5 text-bg">
-      <Link href="/practice" className="text-[13px] text-white/70 hover:text-white">
-        ← Practice
+    <header className="flex min-h-14 shrink-0 flex-wrap items-center gap-x-3 gap-y-2 bg-topbar px-3 py-2 text-bg sm:h-14 sm:flex-nowrap sm:gap-5 sm:px-5 sm:py-0">
+      <Link href="/practice" aria-label="Back to practice" className="text-[13px] text-white/70 hover:text-white">
+        ←<span className="hidden sm:inline"> Practice</span>
       </Link>
-      <span className="font-semibold tracking-tight">Chartwise</span>
+      <span className="hidden font-semibold tracking-tight sm:inline">Chartwise</span>
       <span className="hidden rounded-full border border-white/20 px-2.5 py-[3px] text-[12px] text-white/80 sm:inline">
         CMS-HCC V28 · PY{chart.paymentYear}
       </span>
@@ -69,7 +69,7 @@ export function EncoderTopBar({
               type="button"
               aria-pressed={mode === m}
               onClick={() => chooseMode(m)}
-              className={`h-7 cursor-pointer rounded-[6px] border-0 px-3 text-[13px] font-medium ${
+              className={`h-7 cursor-pointer rounded-[6px] border-0 px-2 text-[13px] font-medium sm:px-3 ${
                 mode === m ? "bg-bg text-ink" : "bg-transparent text-white/60"
               }`}
             >
@@ -96,14 +96,15 @@ export function EncoderTopBar({
           {remaining > 0 ? `${formatClock(remaining)} left` : "Time is up"}
         </span>
       ) : (
-        <span className="font-mono text-[13px] text-white/80" aria-label="Time on this chart">
+        <span className={`font-mono text-[13px] text-white/80 ${elapsed === null ? "hidden sm:inline" : ""}`} aria-label="Time on this chart">
           {elapsed === null ? "Not started" : formatClock(elapsed)}
         </span>
       )}
 
       {nextChartId ? (
-        <Link href={`/practice/${nextChartId}`} className="text-[13px] text-white/70 hover:text-white">
-          Skip to next chart →
+        <Link href={`/practice/${nextChartId}`} aria-label="Skip to next chart" className="text-[13px] text-white/70 hover:text-white">
+          <span className="sm:hidden">Next →</span>
+          <span className="hidden sm:inline">Skip to next chart →</span>
         </Link>
       ) : null}
     </header>
