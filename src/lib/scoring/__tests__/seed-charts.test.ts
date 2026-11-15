@@ -2,7 +2,7 @@
  * The seed charts, scored against the committed CMS-format fixture
  * (data/fixtures/py2026) through the same parser the loader uses. This ties the
  * engine to real V28 tables rather than a hand-copied slice, and pins the RAF
- * each seed chart's header comment promises a reviewer.
+ * each seed chart states in its `expected` field.
  */
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -48,24 +48,14 @@ function toSlice(release: ReferenceRelease): ReferenceSlice {
 
 const reference = toSlice(fixtureRelease());
 
-/** What each chart's header comment promises (scripts/seed/charts.ts). */
-const EXPECTED: Record<string, { hccs: number[]; trimmed: number[]; raf: number }> = {
-  "00000000-0000-4000-8000-000000000101": { hccs: [37, 280, 329], trimmed: [], raf: 0.612 },
-  "00000000-0000-4000-8000-000000000102": { hccs: [224, 238], trimmed: [226], raf: 0.659 },
-  "00000000-0000-4000-8000-000000000103": { hccs: [37, 155, 253, 327], trimmed: [38], raf: 1.366 },
-};
-
 describe.each(SEED_CHARTS)("seed chart scored on the PY2026 fixture: $title", (chart) => {
   const patient = { age: ageOn(chart.patient.dob, chart.encounterDate), sex: chart.patient.sex };
   const key = chart.key.map((k) => ({ code: k.code, required: k.required }));
   const required = chart.key.filter((k) => k.required).map((k) => k.code);
-  const expected = EXPECTED[chart.id];
+  // What the chart is designed to teach (its `expected` field in scripts/seed).
+  const expected = chart.expected;
 
-  it("has a documented expectation", () => {
-    expect(expected).toBeDefined();
-  });
-
-  it("key HCCs and RAF match the chart's header comment, after hierarchy trimming", () => {
+  it("key HCCs and RAF match the chart's stated design, after hierarchy trimming", () => {
     const result = scoreAttempt({ submitted: required, key, patient, reference });
     expect(result.key.hccs).toEqual(expected.hccs);
     expect(result.key.trimmed.map((t) => t.hcc)).toEqual(expected.trimmed);

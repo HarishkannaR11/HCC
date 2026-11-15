@@ -78,7 +78,7 @@ describe("buildReference (PY2026 V28 fixture)", () => {
     const withRetired = buildReference(files, { paymentYear: 2026, model: "V28", expectFullRelease: false, log: (l) => log.push(l) });
     expect(withRetired.icd_hcc_map.filter((m) => m.code === "E11")).toEqual([]);
     expect(withRetired.icd_hcc_map).toHaveLength(release.icd_hcc_map.length);
-    expect(log.join("\n")).toMatch(/skipped 1 codes that are headers this year.*\(E11\)/);
+    expect(log.join("\n")).toMatch(/codes that are headers this year, mapped through their children \(.*\bE11\b.*\)/);
   });
 
   it("still fails loudly on a header whose children do not carry that HCC", () => {

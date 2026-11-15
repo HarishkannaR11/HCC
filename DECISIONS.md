@@ -163,3 +163,15 @@ reasoning each. Newest phase at the bottom.
 - **Reference data was loaded with the real loader from the official CMS/CDC files**, then copied row for row. Checksums of every table match the locally verified load.
 - **`SITE_URL` (production) = `https://hcc-iota.vercel.app`**, and Supabase auth's site URL and redirect allow-list match it. The confirmation email keeps Supabase's default template, because the free plan locks templates until custom SMTP is configured.
 
+## Chart library
+
+- **30 more synthetic charts, three per specialty (difficulty 1, 2 and 3), 33 in all.** Each is built around a V28 teaching point, for example:
+  - what V28 dropped: stable angina, claudication, malnutrition, mild or in-remission depression, kidney transplant status;
+  - severity that changes the HCC: severe versus moderate asthma, IPF versus unspecified fibrosis, pressure ulcer stage;
+  - status versus history;
+  - the breast cancer age edit;
+  - hierarchy trimming within cancer, heart failure, diabetes, dementia and the HCC263 group.
+- **Every code was checked against the official PY2026 files, and every chart's `expected` HCCs, trimming and RAF were recomputed independently** from the official mappings, edits and hierarchy before seeding. The scoring test then checks the engine agrees. The six trap types are all used, including three unsigned or undated outside documents for `signature_or_date_missing`.
+- **Multiple sclerosis uses the FY2026 type-specific codes (G35.A), so that chart is dated after 10/01/2025.**
+- **The fixture is now generated (`npm run data:fixture`) as a verbatim subset of the official files with complete hierarchy groups**, instead of being hand-assembled. It covers every seed chart, and it can't drift from production values.
+

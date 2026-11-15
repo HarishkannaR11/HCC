@@ -47,7 +47,7 @@ India to US customers, so no US-entity requirement).
   `hcc_categories` (CNA coefficient, `hierarchy_group`, `hierarchy_rank`),
   `hcc_hierarchy` (explicit CMS suppression pairs; **trim with these**),
   `icd_hcc_map` (with CMS age/sex/MCE edits).
-- Content: `charts` (synthetic patient header, DOB/sex drive edits),
+- Content: `charts` (synthetic patient header, DOB/sex drive edits; 33 seed charts in `scripts/seed`),
   `chart_sections`, `answer_key_items`, `distractors` (both with `trap_type`).
 - Attempts: `attempts`, `attempt_codes`, `attempt_results` (HCC-code arrays).
 - Account: `profiles` (role via `npm run admin:grant` only), `subscriptions`,

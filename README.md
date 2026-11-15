@@ -39,7 +39,7 @@ If Docker cannot pull from `public.ecr.aws`, use Docker Hub instead:
 With the official CMS/CDC files in `data/raw/` (see `data/README.md`):
 
 ```bash
-npm run db:seed          # parse -> load PY2026 V28 -> seed the 3 synthetic charts
+npm run db:seed          # parse -> load PY2026 V28 -> seed the 33 synthetic charts
 npm run data:verify      # spot-check codes, weights and hierarchy against CMS values
 ```
 
@@ -126,7 +126,7 @@ npm run build          # also fails if a server secret reaches a client bundle
 supabase/migrations/   schema, RLS, triggers (0004+ is the versioned schema)
 scripts/               reference-data parser/loader/verifier, chart seed, admin grant,
                        client-bundle secret check
-scripts/seed/charts.ts the three hand-written synthetic seed charts
+scripts/seed/           the 33 hand-written synthetic seed charts (charts.ts + library/)
 data/fixtures/py2026/  small CMS-format fixture for tests and local dev
 src/proxy.ts           session refresh + optimistic redirects (Next 16 "proxy")
 src/lib/auth/          session data-access layer, redirect guard

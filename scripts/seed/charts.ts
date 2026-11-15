@@ -1,11 +1,13 @@
 /**
- * The three hand-written seed charts.
+ * The hand-written seed charts: the three Phase 1 charts below, plus the
+ * library in ./library (three per specialty, one at each difficulty).
  *
  * EVERY PERSON, DATE, MRN, PROVIDER AND FACILITY HERE IS INVENTED. These are
  * synthetic teaching charts; no real patient record was used or consulted.
  *
  * Each chart is built around specific V28 behaviour so a reviewer can check
- * the result screen by hand:
+ * the result screen by hand; its `expected` field states the key HCCs after
+ * trimming, what is trimmed, and the RAF. The three below:
  *
  *   1. Diabetes + CKD 3a + COPD  -> key HCCs {37, 280, 329}, RAF 0.612
  *   2. HF exacerbation           -> I11.0 (HCC226) is trimmed by I50.23
@@ -17,40 +19,15 @@
  * Supporting excerpts are verbatim substrings of the chart text; the seed
  * script asserts it.
  */
-import type { PatientSex, SectionType, TrapType } from "../../src/lib/charts/constants";
+import { LIBRARY_CHARTS } from "./library";
+import type { SeedChart } from "./types";
 
-export interface SeedKeyItem {
-  code: string;
-  required: boolean;
-  excerpt: string;
-  rationale: string;
-  trap: TrapType;
-}
+export type { SeedChart, SeedDistractor, SeedKeyItem } from "./types";
 
-export interface SeedDistractor {
-  code: string;
-  whyWrong: string;
-  trap: TrapType;
-}
-
-export interface SeedChart {
-  id: string;
-  title: string;
-  specialty: string;
-  difficulty: 1 | 2 | 3;
-  paymentYear: number;
-  encounterDate: string;
-  patient: { name: string; dob: string; sex: PatientSex; mrn: string };
-  provider: string;
-  facility: string;
-  sections: Partial<Record<SectionType, string>>;
-  key: SeedKeyItem[];
-  distractors: SeedDistractor[];
-}
-
-export const SEED_CHARTS: SeedChart[] = [
+const PHASE_1_CHARTS: SeedChart[] = [
   {
     id: "00000000-0000-4000-8000-000000000101",
+    expected: { hccs: [37, 280, 329], trimmed: [], raf: 0.612 },
     title: "Diabetes and kidney follow-up",
     specialty: "Family Medicine",
     difficulty: 1,
@@ -132,6 +109,7 @@ export const SEED_CHARTS: SeedChart[] = [
 
   {
     id: "00000000-0000-4000-8000-000000000102",
+    expected: { hccs: [224, 238], trimmed: [226], raf: 0.659 },
     title: "Post-discharge heart failure visit",
     specialty: "Cardiology",
     difficulty: 2,
@@ -245,6 +223,7 @@ export const SEED_CHARTS: SeedChart[] = [
 
   {
     id: "00000000-0000-4000-8000-000000000103",
+    expected: { hccs: [37, 155, 253, 327], trimmed: [38], raf: 1.366 },
     title: "Chronic care visit, multiple conditions",
     specialty: "Internal Medicine",
     difficulty: 3,
@@ -366,3 +345,5 @@ export const SEED_CHARTS: SeedChart[] = [
     ],
   },
 ];
+
+export const SEED_CHARTS: SeedChart[] = [...PHASE_1_CHARTS, ...LIBRARY_CHARTS];

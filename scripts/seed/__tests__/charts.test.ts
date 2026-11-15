@@ -3,13 +3,20 @@
  * and the risk-adjustment rules the charts are designed to teach.
  */
 import { describe, expect, it } from "vitest";
-import { serviceYearFor } from "../../../src/lib/charts/constants";
-import { SEED_CHARTS } from "../charts";
+import { SPECIALTIES, serviceYearFor } from "../../../src/lib/charts/constants";
+import { SEED_CHARTS, type SeedChart } from "../charts";
 
 describe("seed charts", () => {
-  it("are exactly three, with unique ids", () => {
-    expect(SEED_CHARTS).toHaveLength(3);
-    expect(new Set(SEED_CHARTS.map((c) => c.id)).size).toBe(3);
+  it("have unique ids, MRNs and patient names", () => {
+    const picks: Array<(c: SeedChart) => string> = [(c) => c.id, (c) => c.patient.mrn, (c) => c.patient.name];
+    for (const pick of picks) expect(new Set(SEED_CHARTS.map(pick)).size).toBe(SEED_CHARTS.length);
+  });
+
+  it("cover every specialty at every difficulty", () => {
+    for (const specialty of SPECIALTIES) {
+      const levels = new Set(SEED_CHARTS.filter((c) => c.specialty === specialty).map((c) => c.difficulty));
+      expect([...levels].sort(), specialty).toEqual([1, 2, 3]);
+    }
   });
 
   for (const chart of SEED_CHARTS) {

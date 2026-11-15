@@ -1,92 +1,376 @@
-00001 C50     0 Malignant neoplasm of breast                                 Malignant neoplasm of breast
-00002 C500    0 Malignant neoplasm of nipple and areola                      Malignant neoplasm of nipple and areola
-00003 C5001   0 Malignant neoplasm of nipple and areola, female              Malignant neoplasm of nipple and areola, female
-00004 C50011  1 Malignant neoplasm of nipple and areola, right female breast Malignant neoplasm of nipple and areola, right female breast
-00005 C509    0 Malignant neoplasm of breast of unspecified site             Malignant neoplasm of breast of unspecified site
-00006 C5091   0 Malignant neoplasm of breast of unspecified site, female     Malignant neoplasm of breast of unspecified site, female
-00007 C50912  1 Malignant neoplasm of unspecified site of left female breast Malignant neoplasm of unspecified site of left female breast
-00008 E11     0 Type 2 diabetes mellitus                                     Type 2 diabetes mellitus
-00009 E112    0 Type 2 diabetes mellitus with kidney complications           Type 2 diabetes mellitus with kidney complications
-00010 E1121   1 Type 2 diabetes mellitus with diabetic nephropathy           Type 2 diabetes mellitus with diabetic nephropathy
-00011 E1122   1 Type 2 diabetes mellitus with diabetic chronic kidney diseas Type 2 diabetes mellitus with diabetic chronic kidney disease
-00012 E114    0 Type 2 diabetes mellitus with neurological complications     Type 2 diabetes mellitus with neurological complications
-00013 E1142   1 Type 2 diabetes mellitus with diabetic polyneuropathy        Type 2 diabetes mellitus with diabetic polyneuropathy
-00014 E116    0 Type 2 diabetes mellitus with other specified complications  Type 2 diabetes mellitus with other specified complications
-00015 E1165   1 Type 2 diabetes mellitus with hyperglycemia                  Type 2 diabetes mellitus with hyperglycemia
-00016 E119    1 Type 2 diabetes mellitus without complications               Type 2 diabetes mellitus without complications
-00017 E66     0 Overweight and obesity                                       Overweight and obesity
-00018 E660    0 Obesity due to excess calories                               Obesity due to excess calories
-00019 E6601   1 Morbid (severe) obesity due to excess calories               Morbid (severe) obesity due to excess calories
-00020 E78     0 Disorders of lipoprotein metabolism and other lipidemias     Disorders of lipoprotein metabolism and other lipidemias
-00021 E785    1 Hyperlipidemia, unspecified                                  Hyperlipidemia, unspecified
-00022 F32     0 Depressive episode                                           Depressive episode
-00023 F321    1 Major depressive disorder, single episode, moderate          Major depressive disorder, single episode, moderate
-00024 F329    1 Major depressive disorder, single episode, unspecified       Major depressive disorder, single episode, unspecified
-00025 F32A    1 Depression, unspecified                                      Depression, unspecified
-00026 F33     0 Major depressive disorder, recurrent                         Major depressive disorder, recurrent
-00027 F331    1 Major depressive disorder, recurrent, moderate               Major depressive disorder, recurrent, moderate
-00028 G81     0 Hemiplegia and hemiparesis                                   Hemiplegia and hemiparesis
-00029 G819    0 Hemiplegia, unspecified                                      Hemiplegia, unspecified
-00030 G8191   1 Hemiplegia, unspecified affecting right dominant side        Hemiplegia, unspecified affecting right dominant side
-00031 G82     0 Paraplegia (paraparesis) and quadriplegia (quadriparesis)    Paraplegia (paraparesis) and quadriplegia (quadriparesis)
-00032 G822    0 Paraplegia                                                   Paraplegia
-00033 G8221   1 Paraplegia, complete                                         Paraplegia, complete
-00034 G825    0 Quadriplegia                                                 Quadriplegia
-00035 G8250   1 Quadriplegia, unspecified                                    Quadriplegia, unspecified
-00036 G95     0 Other and unspecified diseases of spinal cord                Other and unspecified diseases of spinal cord
-00037 G951    0 Vascular myelopathies                                        Vascular myelopathies
-00038 G9519   1 Other vascular myelopathies                                  Other vascular myelopathies
-00039 I10     1 Essential (primary) hypertension                             Essential (primary) hypertension
-00040 I11     0 Hypertensive heart disease                                   Hypertensive heart disease
-00041 I110    1 Hypertensive heart disease with heart failure                Hypertensive heart disease with heart failure
-00042 I12     0 Hypertensive chronic kidney disease                          Hypertensive chronic kidney disease
-00043 I120    1 Hypertensive chronic kidney disease with stage 5 chronic kid Hypertensive chronic kidney disease with stage 5 chronic kidney disease or end stage renal disease
-00044 I129    1 Hypertensive chronic kidney disease with stage 1 through sta Hypertensive chronic kidney disease with stage 1 through stage 4 chronic kidney disease, or unspecified chronic kidney disease
-00045 I21     0 Acute myocardial infarction                                  Acute myocardial infarction
-00046 I214    1 Non-ST elevation (NSTEMI) myocardial infarction              Non-ST elevation (NSTEMI) myocardial infarction
-00047 I25     0 Chronic ischemic heart disease                               Chronic ischemic heart disease
-00048 I251    0 Atherosclerotic heart disease of native coronary artery      Atherosclerotic heart disease of native coronary artery
-00049 I2510   1 Atherosclerotic heart disease of native coronary artery with Atherosclerotic heart disease of native coronary artery without angina pectoris
-00050 I252    1 Old myocardial infarction                                    Old myocardial infarction
-00051 I48     0 Atrial fibrillation and flutter                              Atrial fibrillation and flutter
-00052 I481    0 Persistent atrial fibrillation                               Persistent atrial fibrillation
-00053 I4819   1 Other persistent atrial fibrillation                         Other persistent atrial fibrillation
-00054 I489    0 Unspecified atrial fibrillation and atrial flutter           Unspecified atrial fibrillation and atrial flutter
-00055 I4891   1 Unspecified atrial fibrillation                              Unspecified atrial fibrillation
-00056 I50     0 Heart failure                                                Heart failure
-00057 I502    0 Systolic (congestive) heart failure                          Systolic (congestive) heart failure
-00058 I5020   1 Unspecified systolic (congestive) heart failure              Unspecified systolic (congestive) heart failure
-00059 I5022   1 Chronic systolic (congestive) heart failure                  Chronic systolic (congestive) heart failure
-00060 I5023   1 Acute on chronic systolic (congestive) heart failure         Acute on chronic systolic (congestive) heart failure
-00061 I503    0 Diastolic (congestive) heart failure                         Diastolic (congestive) heart failure
-00062 I5032   1 Chronic diastolic (congestive) heart failure                 Chronic diastolic (congestive) heart failure
-00063 I509    1 Heart failure, unspecified                                   Heart failure, unspecified
-00064 I63     0 Cerebral infarction                                          Cerebral infarction
-00065 I639    1 Cerebral infarction, unspecified                             Cerebral infarction, unspecified
-00066 I69     0 Sequelae of cerebrovascular disease                          Sequelae of cerebrovascular disease
-00067 I693    0 Sequelae of cerebral infarction                              Sequelae of cerebral infarction
-00068 I6935   0 Hemiplegia and hemiparesis following cerebral infarction     Hemiplegia and hemiparesis following cerebral infarction
-00069 I69351  1 Hemiplegia and hemiparesis following cerebral infarction aff Hemiplegia and hemiparesis following cerebral infarction affecting right dominant side
-00070 J44     0 Other chronic obstructive pulmonary disease                  Other chronic obstructive pulmonary disease
-00071 J441    1 Chronic obstructive pulmonary disease with (acute) exacerbat Chronic obstructive pulmonary disease with (acute) exacerbation
-00072 J449    1 Chronic obstructive pulmonary disease, unspecified           Chronic obstructive pulmonary disease, unspecified
-00073 N18     0 Chronic kidney disease (CKD)                                 Chronic kidney disease (CKD)
-00074 N183    0 Chronic kidney disease, stage 3 (moderate)                   Chronic kidney disease, stage 3 (moderate)
-00075 N1830   1 Chronic kidney disease, stage 3 unspecified                  Chronic kidney disease, stage 3 unspecified
-00076 N1831   1 Chronic kidney disease, stage 3a                             Chronic kidney disease, stage 3a
-00077 N1832   1 Chronic kidney disease, stage 3b                             Chronic kidney disease, stage 3b
-00078 N184    1 Chronic kidney disease, stage 4 (severe)                     Chronic kidney disease, stage 4 (severe)
-00079 N185    1 Chronic kidney disease, stage 5                              Chronic kidney disease, stage 5
-00080 N186    1 End stage renal disease                                      End stage renal disease
-00081 N189    1 Chronic kidney disease, unspecified                          Chronic kidney disease, unspecified
-00082 Z68     0 Body mass index [BMI]                                        Body mass index [BMI]
-00083 Z684    0 Body mass index [BMI] 40 or greater, adult                   Body mass index [BMI] 40 or greater, adult
-00084 Z6841   1 Body mass index [BMI] 40.0-44.9, adult                       Body mass index [BMI] 40.0-44.9, adult
-00085 Z79     0 Long term (current) drug therapy                             Long term (current) drug therapy
-00086 Z790    0 Long term (current) use of anticoagulants and antithrombotic Long term (current) use of anticoagulants and antithrombotics/antiplatelets
-00087 Z7901   1 Long term (current) use of anticoagulants                    Long term (current) use of anticoagulants
-00088 Z794    1 Long term (current) use of insulin                           Long term (current) use of insulin
-00089 Z798    0 Other long term (current) drug therapy                       Other long term (current) drug therapy
-00090 Z7984   1 Long term (current) use of oral hypoglycemic drugs           Long term (current) use of oral hypoglycemic drugs
-00091 Z85     0 Personal history of malignant neoplasm                       Personal history of malignant neoplasm
-00092 Z853    1 Personal history of malignant neoplasm of breast             Personal history of malignant neoplasm of breast
+00823 B18     0 Chronic viral hepatitis                                      Chronic viral hepatitis
+00826 B182    1 Chronic viral hepatitis C                                    Chronic viral hepatitis C
+00829 B19     0 Unspecified viral hepatitis                                  Unspecified viral hepatitis
+00834 B192    0 Unspecified viral hepatitis C                                Unspecified viral hepatitis C
+00835 B1920   1 Unspecified viral hepatitis C without hepatic coma           Unspecified viral hepatitis C without hepatic coma
+01411 C18     0 Malignant neoplasm of colon                                  Malignant neoplasm of colon
+01419 C187    1 Malignant neoplasm of sigmoid colon                          Malignant neoplasm of sigmoid colon
+01475 C34     0 Malignant neoplasm of bronchus and lung                      Malignant neoplasm of bronchus and lung
+01480 C341    0 Malignant neoplasm of upper lobe, bronchus or lung           Malignant neoplasm of upper lobe, bronchus or lung
+01482 C3411   1 Malignant neoplasm of upper lobe, right bronchus or lung     Malignant neoplasm of upper lobe, right bronchus or lung
+01816 C50     0 Malignant neoplasm of breast                                 Malignant neoplasm of breast
+01817 C500    0 Malignant neoplasm of nipple and areola                      Malignant neoplasm of nipple and areola
+01818 C5001   0 Malignant neoplasm of nipple and areola, female              Malignant neoplasm of nipple and areola, female
+01819 C50011  1 Malignant neoplasm of nipple and areola, right female breast Malignant neoplasm of nipple and areola, right female breast
+01853 C504    0 Malignant neoplasm of upper-outer quadrant of breast         Malignant neoplasm of upper-outer quadrant of breast
+01854 C5041   0 Malignant neoplasm of upper-outer quadrant of breast, female Malignant neoplasm of upper-outer quadrant of breast, female
+01855 C50411  1 Malig neoplm of upper-outer quadrant of right female breast  Malignant neoplasm of upper-outer quadrant of right female breast
+01856 C50412  1 Malig neoplasm of upper-outer quadrant of left female breast Malignant neoplasm of upper-outer quadrant of left female breast
+01889 C509    0 Malignant neoplasm of breast of unspecified site             Malignant neoplasm of breast of unspecified site
+01890 C5091   0 Malignant neoplasm of breast of unspecified site, female     Malignant neoplasm of breast of unspecified site, female
+01891 C50911  1 Malignant neoplasm of unsp site of right female breast       Malignant neoplasm of unspecified site of right female breast
+01892 C50912  1 Malignant neoplasm of unspecified site of left female breast Malignant neoplasm of unspecified site of left female breast
+01952 C61     1 Malignant neoplasm of prostate                               Malignant neoplasm of prostate
+02162 C78     0 Secondary malignant neoplasm of resp and digestive organs    Secondary malignant neoplasm of respiratory and digestive organs
+02163 C780    0 Secondary malignant neoplasm of lung                         Secondary malignant neoplasm of lung
+02165 C7801   1 Secondary malignant neoplasm of right lung                   Secondary malignant neoplasm of right lung
+02179 C79     0 Secondary malignant neoplasm of other and unspecified sites  Secondary malignant neoplasm of other and unspecified sites
+02189 C793    0 Secondary malignant neoplasm of brain and cerebral meninges  Secondary malignant neoplasm of brain and cerebral meninges
+02190 C7931   1 Secondary malignant neoplasm of brain                        Secondary malignant neoplasm of brain
+02195 C795    0 Secondary malignant neoplasm of bone and bone marrow         Secondary malignant neoplasm of bone and bone marrow
+02196 C7951   1 Secondary malignant neoplasm of bone                         Secondary malignant neoplasm of bone
+03630 D63     0 Anemia in chronic diseases classified elsewhere              Anemia in chronic diseases classified elsewhere
+03632 D631    1 Anemia in chronic kidney disease                             Anemia in chronic kidney disease
+03634 D64     0 Other anemias                                                Other anemias
+03643 D649    1 Anemia, unspecified                                          Anemia, unspecified
+03900 E03     0 Other hypothyroidism                                         Other hypothyroidism
+03908 E039    1 Hypothyroidism, unspecified                                  Hypothyroidism, unspecified
+03937 E06     0 Thyroiditis                                                  Thyroiditis
+03941 E063    1 Autoimmune thyroiditis                                       Autoimmune thyroiditis
+04184 E10     0 Type 1 diabetes mellitus                                     Type 1 diabetes mellitus
+04278 E106    0 Type 1 diabetes mellitus with other specified complications  Type 1 diabetes mellitus with other specified complications
+04293 E1065   1 Type 1 diabetes mellitus with hyperglycemia                  Type 1 diabetes mellitus with hyperglycemia
+04296 E109    1 Type 1 diabetes mellitus without complications               Type 1 diabetes mellitus without complications
+04301 E11     0 Type 2 diabetes mellitus                                     Type 2 diabetes mellitus
+04308 E112    0 Type 2 diabetes mellitus with kidney complications           Type 2 diabetes mellitus with kidney complications
+04309 E1121   1 Type 2 diabetes mellitus with diabetic nephropathy           Type 2 diabetes mellitus with diabetic nephropathy
+04310 E1122   1 Type 2 diabetes mellitus w diabetic chronic kidney disease   Type 2 diabetes mellitus with diabetic chronic kidney disease
+04312 E113    0 Type 2 diabetes mellitus with ophthalmic complications       Type 2 diabetes mellitus with ophthalmic complications
+04313 E1131   0 Type 2 diabetes mellitus with unsp diabetic retinopathy      Type 2 diabetes mellitus with unspecified diabetic retinopathy
+04315 E11319  1 Type 2 diabetes w unsp diabetic rtnop w/o macular edema      Type 2 diabetes mellitus with unspecified diabetic retinopathy without macular edema
+04349 E1135   0 Type 2 diabetes w proliferative diabetic retinopathy         Type 2 diabetes mellitus with proliferative diabetic retinopathy
+04370 E11355  0 Type 2 diabetes with stable prolif diabetic retinopathy      Type 2 diabetes mellitus with stable proliferative diabetic retinopathy
+04373 E113553 1 Type 2 diabetes with stable prolif diabetic rtnop, bilateral Type 2 diabetes mellitus with stable proliferative diabetic retinopathy, bilateral
+04387 E114    0 Type 2 diabetes mellitus with neurological complications     Type 2 diabetes mellitus with neurological complications
+04390 E1142   1 Type 2 diabetes mellitus with diabetic polyneuropathy        Type 2 diabetes mellitus with diabetic polyneuropathy
+04398 E116    0 Type 2 diabetes mellitus with other specified complications  Type 2 diabetes mellitus with other specified complications
+04402 E1162   0 Type 2 diabetes mellitus with skin complications             Type 2 diabetes mellitus with skin complications
+04404 E11621  1 Type 2 diabetes mellitus with foot ulcer                     Type 2 diabetes mellitus with foot ulcer
+04410 E1164   0 Type 2 diabetes mellitus with hypoglycemia                   Type 2 diabetes mellitus with hypoglycemia
+04411 E11641  1 Type 2 diabetes mellitus with hypoglycemia with coma         Type 2 diabetes mellitus with hypoglycemia with coma
+04412 E11649  1 Type 2 diabetes mellitus with hypoglycemia without coma      Type 2 diabetes mellitus with hypoglycemia without coma
+04413 E1165   1 Type 2 diabetes mellitus with hyperglycemia                  Type 2 diabetes mellitus with hyperglycemia
+04416 E119    1 Type 2 diabetes mellitus without complications               Type 2 diabetes mellitus without complications
+04579 E24     0 Cushing's syndrome                                           Cushing's syndrome
+04586 E249    1 Cushing's syndrome, unspecified                              Cushing's syndrome, unspecified
+04601 E27     0 Other disorders of adrenal gland                             Other disorders of adrenal gland
+04603 E271    1 Primary adrenocortical insufficiency                         Primary adrenocortical insufficiency
+04604 E272    1 Addisonian crisis                                            Addisonian crisis
+04683 E43     1 Unspecified severe protein-calorie malnutrition              Unspecified severe protein-calorie malnutrition
+04684 E44     0 Protein-calorie malnutrition of moderate and mild degree     Protein-calorie malnutrition of moderate and mild degree
+04685 E440    1 Moderate protein-calorie malnutrition                        Moderate protein-calorie malnutrition
+04749 E66     0 Overweight and obesity                                       Overweight and obesity
+04750 E660    0 Obesity due to excess calories                               Obesity due to excess calories
+04751 E6601   1 Morbid (severe) obesity due to excess calories               Morbid (severe) obesity due to excess calories
+04756 E668    0 Other obesity                                                Other obesity
+04757 E6681   0 Obesity class                                                Obesity class
+04759 E66812  1 Obesity, class 2                                             Obesity, class 2
+04762 E669    1 Obesity, unspecified                                         Obesity, unspecified
+04982 E78     0 Disorders of lipoprotein metabolism and other lipidemias     Disorders of lipoprotein metabolism and other lipidemias
+04995 E785    1 Hyperlipidemia, unspecified                                  Hyperlipidemia, unspecified
+05189 F02     0 Dementia in other diseases classified elsewhere              Dementia in other diseases classified elsewhere
+05206 F02B    0 Dementia in other diseases classified elsewhere, moderate    Dementia in other diseases classified elsewhere, moderate
+05207 F02B0   1 Dem in other dis classd elswhr, mod, w/o beh/psych/mood/anx  Dementia in other diseases classified elsewhere, moderate, without behavioral disturbance, psychotic disturbance, mood disturbance, and anxiety
+05222 F03     0 Unspecified dementia                                         Unspecified dementia
+05223 F039    0 Unspecified dementia, unspecified severity                   Unspecified dementia, unspecified severity
+05224 F0390   1 Unsp dementia, unsp severity, without beh/psych/mood/anx     Unspecified dementia, unspecified severity, without behavioral disturbance, psychotic disturbance, mood disturbance, and anxiety
+05279 F10     0 Alcohol related disorders                                    Alcohol related disorders
+05280 F101    0 Alcohol abuse                                                Alcohol abuse
+05281 F1010   1 Alcohol abuse, uncomplicated                                 Alcohol abuse, uncomplicated
+05303 F102    0 Alcohol dependence                                           Alcohol dependence
+05304 F1020   1 Alcohol dependence, uncomplicated                            Alcohol dependence, uncomplicated
+05305 F1021   1 Alcohol dependence, in remission                             Alcohol dependence, in remission
+05353 F11     0 Opioid related disorders                                     Opioid related disorders
+05373 F112    0 Opioid dependence                                            Opioid dependence
+05374 F1120   1 Opioid dependence, uncomplicated                             Opioid dependence, uncomplicated
+05375 F1121   1 Opioid dependence, in remission                              Opioid dependence, in remission
+05712 F17     0 Nicotine dependence                                          Nicotine dependence
+05713 F172    0 Nicotine dependence                                          Nicotine dependence
+05720 F1721   0 Nicotine dependence, cigarettes                              Nicotine dependence, cigarettes
+05721 F17210  1 Nicotine dependence, cigarettes, uncomplicated               Nicotine dependence, cigarettes, uncomplicated
+05869 F20     0 Schizophrenia                                                Schizophrenia
+05878 F209    1 Schizophrenia, unspecified                                   Schizophrenia, unspecified
+05883 F25     0 Schizoaffective disorders                                    Schizoaffective disorders
+05884 F250    1 Schizoaffective disorder, bipolar type                       Schizoaffective disorder, bipolar type
+05901 F31     0 Bipolar disorder                                             Bipolar disorder
+05909 F313    0 Bipolar disord, current episode depress, mild or mod severt  Bipolar disorder, current episode depressed, mild or moderate severity
+05912 F3132   1 Bipolar disorder, current episode depressed, moderate        Bipolar disorder, current episode depressed, moderate
+05934 F319    1 Bipolar disorder, unspecified                                Bipolar disorder, unspecified
+05935 F32     0 Depressive episode                                           Depressive episode
+05936 F320    1 Major depressive disorder, single episode, mild              Major depressive disorder, single episode, mild
+05937 F321    1 Major depressive disorder, single episode, moderate          Major depressive disorder, single episode, moderate
+05945 F329    1 Major depressive disorder, single episode, unspecified       Major depressive disorder, single episode, unspecified
+05946 F32A    1 Depression, unspecified                                      Depression, unspecified
+05947 F33     0 Major depressive disorder, recurrent                         Major depressive disorder, recurrent
+05949 F331    1 Major depressive disorder, recurrent, moderate               Major depressive disorder, recurrent, moderate
+05952 F334    0 Major depressive disorder, recurrent, in remission           Major depressive disorder, recurrent, in remission
+05954 F3341   1 Major depressive disorder, recurrent, in partial remission   Major depressive disorder, recurrent, in partial remission
+05955 F3342   1 Major depressive disorder, recurrent, in full remission      Major depressive disorder, recurrent, in full remission
+05998 F41     0 Other anxiety disorders                                      Other anxiety disorders
+06000 F411    1 Generalized anxiety disorder                                 Generalized anxiety disorder
+06326 G12     0 Spinal muscular atrophy and related syndromes                Spinal muscular atrophy and related syndromes
+06329 G122    0 Motor neuron disease                                         Motor neuron disease
+06330 G1220   1 Motor neuron disease, unspecified                            Motor neuron disease, unspecified
+06331 G1221   1 Amyotrophic lateral sclerosis                                Amyotrophic lateral sclerosis
+06345 G20     0 Parkinson's disease                                          Parkinson's disease
+06346 G20A    0 Parkinson's disease without dyskinesia                       Parkinson's disease without dyskinesia
+06347 G20A1   1 Parkinson's dis w/o dyskinesia, w/o mention of fluctuations  Parkinson's disease without dyskinesia, without mention of fluctuations
+06352 G20C    1 Parkinsonism, unspecified                                    Parkinsonism, unspecified
+06353 G21     0 Secondary parkinsonism                                       Secondary parkinsonism
+06355 G211    0 Other drug-induced secondary parkinsonism                    Other drug-induced secondary parkinsonism
+06356 G2111   1 Neuroleptic induced parkinsonism                             Neuroleptic induced parkinsonism
+06403 G30     0 Alzheimer's disease                                          Alzheimer's disease
+06405 G301    1 Alzheimer's disease with late onset                          Alzheimer's disease with late onset
+06430 G35     0 Multiple sclerosis                                           Multiple sclerosis
+06431 G35A    1 Relapsing-remitting multiple sclerosis                       Relapsing-remitting multiple sclerosis
+06436 G35C    0 Secondary progressive multiple sclerosis                     Secondary progressive multiple sclerosis
+06437 G35C0   1 Secondary progressive multiple sclerosis, unspecified        Secondary progressive multiple sclerosis, unspecified
+06440 G35D    1 Multiple sclerosis, unspecified                              Multiple sclerosis, unspecified
+06457 G40     0 Epilepsy and recurrent seizures                              Epilepsy and recurrent seizures
+06472 G402    0 Local-rel (focal) symptc epilepsy w complex partial seizures Localization-related (focal) (partial) symptomatic epilepsy and epileptic syndromes with complex partial seizures
+06473 G4020   0 Local-rel symptc epi w complex partial seiz, not ntrct       Localization-related (focal) (partial) symptomatic epilepsy and epileptic syndromes with complex partial seizures, not intractable
+06475 G40209  1 Local-rel symptc epi w cmplx prt seiz,not ntrct,w/o stat epi Localization-related (focal) (partial) symptomatic epilepsy and epileptic syndromes with complex partial seizures, not intractable, without status epilepticus
+06476 G4021   0 Local-rel (focal) symptc epi w complex partial seiz, ntrct   Localization-related (focal) (partial) symptomatic epilepsy and epileptic syndromes with complex partial seizures, intractable
+06478 G40219  1 Local-rel symptc epi w cmplx part seiz, ntrct, w/o stat epi  Localization-related (focal) (partial) symptomatic epilepsy and epileptic syndromes with complex partial seizures, intractable, without status epilepticus
+06544 G409    0 Epilepsy, unspecified                                        Epilepsy, unspecified
+06545 G4090   0 Epilepsy, unspecified, not intractable                       Epilepsy, unspecified, not intractable
+06547 G40909  1 Epilepsy, unsp, not intractable, without status epilepticus  Epilepsy, unspecified, not intractable, without status epilepticus
+06551 G43     0 Migraine                                                     Migraine
+06552 G430    0 Migraine without aura                                        Migraine without aura
+06553 G4300   0 Migraine without aura, not intractable                       Migraine without aura, not intractable
+06555 G43009  1 Migraine w/o aura, not intractable, w/o status migrainosus   Migraine without aura, not intractable, without status migrainosus
+06711 G47     0 Sleep disorders                                              Sleep disorders
+06733 G473    0 Sleep apnea                                                  Sleep apnea
+06737 G4733   1 Obstructive sleep apnea (adult) (pediatric)                  Obstructive sleep apnea (adult) (pediatric)
+06995 G81     0 Hemiplegia and hemiparesis                                   Hemiplegia and hemiparesis
+07008 G819    0 Hemiplegia, unspecified                                      Hemiplegia, unspecified
+07010 G8191   1 Hemiplegia, unspecified affecting right dominant side        Hemiplegia, unspecified affecting right dominant side
+07014 G82     0 Paraplegia (paraparesis) and quadriplegia (quadriparesis)    Paraplegia (paraparesis) and quadriplegia (quadriparesis)
+07015 G822    0 Paraplegia                                                   Paraplegia
+07017 G8221   1 Paraplegia, complete                                         Paraplegia, complete
+07019 G825    0 Quadriplegia                                                 Quadriplegia
+07020 G8250   1 Quadriplegia, unspecified                                    Quadriplegia, unspecified
+07112 G93     0 Other disorders of brain                                     Other disorders of brain
+07131 G938    0 Other specified disorders of brain                           Other specified disorders of brain
+07132 G9381   1 Temporal sclerosis                                           Temporal sclerosis
+07137 G95     0 Other and unspecified diseases of spinal cord                Other and unspecified diseases of spinal cord
+07139 G951    0 Vascular myelopathies                                        Vascular myelopathies
+07141 G9519   1 Other vascular myelopathies                                  Other vascular myelopathies
+11580 I10     1 Essential (primary) hypertension                             Essential (primary) hypertension
+11581 I11     0 Hypertensive heart disease                                   Hypertensive heart disease
+11582 I110    1 Hypertensive heart disease with heart failure                Hypertensive heart disease with heart failure
+11584 I12     0 Hypertensive chronic kidney disease                          Hypertensive chronic kidney disease
+11585 I120    1 Hyp chr kidney disease w stage 5 chr kidney disease or ESRD  Hypertensive chronic kidney disease with stage 5 chronic kidney disease or end stage renal disease
+11586 I129    1 Hypertensive chronic kidney disease w stg 1-4/unsp chr kdny  Hypertensive chronic kidney disease with stage 1 through stage 4 chronic kidney disease, or unspecified chronic kidney disease
+11587 I13     0 Hypertensive heart and chronic kidney disease                Hypertensive heart and chronic kidney disease
+11588 I130    1 Hyp hrt & chr kdny dis w hrt fail and stg 1-4/unsp chr kdny  Hypertensive heart and chronic kidney disease with heart failure and stage 1 through stage 4 chronic kidney disease, or unspecified chronic kidney disease
+11613 I21     0 Acute myocardial infarction                                  Acute myocardial infarction
+11625 I214    1 Non-ST elevation (NSTEMI) myocardial infarction              Non-ST elevation (NSTEMI) myocardial infarction
+11654 I25     0 Chronic ischemic heart disease                               Chronic ischemic heart disease
+11655 I251    0 Atherosclerotic heart disease of native coronary artery      Atherosclerotic heart disease of native coronary artery
+11656 I2510   1 Athscl heart disease of native coronary artery w/o ang pctrs Atherosclerotic heart disease of native coronary artery without angina pectoris
+11657 I2511   0 Athscl heart disease of native coronary artery w ang pctrs   Atherosclerotic heart disease of native coronary artery with angina pectoris
+11658 I25110  1 Athscl heart disease of native cor art w unstable ang pctrs  Atherosclerotic heart disease of native coronary artery with unstable angina pectoris
+11661 I25118  1 Athscl heart disease of native cor art w oth ang pctrs       Atherosclerotic heart disease of native coronary artery with other forms of angina pectoris
+11663 I252    1 Old myocardial infarction                                    Old myocardial infarction
+11668 I255    1 Ischemic cardiomyopathy                                      Ischemic cardiomyopathy
+11724 I26     0 Pulmonary embolism                                           Pulmonary embolism
+11731 I269    0 Pulmonary embolism without acute cor pulmonale               Pulmonary embolism without acute cor pulmonale
+11738 I2699   1 Other pulmonary embolism without acute cor pulmonale         Other pulmonary embolism without acute cor pulmonale
+11739 I27     0 Other pulmonary heart diseases                               Other pulmonary heart diseases
+11742 I272    0 Other secondary pulmonary hypertension                       Other secondary pulmonary hypertension
+11743 I2720   1 Pulmonary hypertension, unspecified                          Pulmonary hypertension, unspecified
+11746 I2723   1 Pulmonary hypertension due to lung diseases and hypoxia      Pulmonary hypertension due to lung diseases and hypoxia
+11818 I42     0 Cardiomyopathy                                               Cardiomyopathy
+11819 I420    1 Dilated cardiomyopathy                                       Dilated cardiomyopathy
+11828 I429    1 Cardiomyopathy, unspecified                                  Cardiomyopathy, unspecified
+11872 I48     0 Atrial fibrillation and flutter                              Atrial fibrillation and flutter
+11873 I480    1 Paroxysmal atrial fibrillation                               Paroxysmal atrial fibrillation
+11874 I481    0 Persistent atrial fibrillation                               Persistent atrial fibrillation
+11876 I4819   1 Other persistent atrial fibrillation                         Other persistent atrial fibrillation
+11877 I482    0 Chronic atrial fibrillation                                  Chronic atrial fibrillation
+11879 I4821   1 Permanent atrial fibrillation                                Permanent atrial fibrillation
+11882 I489    0 Unspecified atrial fibrillation and atrial flutter           Unspecified atrial fibrillation and atrial flutter
+11883 I4891   1 Unspecified atrial fibrillation                              Unspecified atrial fibrillation
+11898 I50     0 Heart failure                                                Heart failure
+11900 I502    0 Systolic (congestive) heart failure                          Systolic (congestive) heart failure
+11901 I5020   1 Unspecified systolic (congestive) heart failure              Unspecified systolic (congestive) heart failure
+11903 I5022   1 Chronic systolic (congestive) heart failure                  Chronic systolic (congestive) heart failure
+11904 I5023   1 Acute on chronic systolic (congestive) heart failure         Acute on chronic systolic (congestive) heart failure
+11905 I503    0 Diastolic (congestive) heart failure                         Diastolic (congestive) heart failure
+11908 I5032   1 Chronic diastolic (congestive) heart failure                 Chronic diastolic (congestive) heart failure
+11909 I5033   1 Acute on chronic diastolic (congestive) heart failure        Acute on chronic diastolic (congestive) heart failure
+11915 I508    0 Other heart failure                                          Other heart failure
+11924 I5084   1 End stage heart failure                                      End stage heart failure
+11926 I509    1 Heart failure, unspecified                                   Heart failure, unspecified
+11982 I63     0 Cerebral infarction                                          Cerebral infarction
+12098 I639    1 Cerebral infarction, unspecified                             Cerebral infarction, unspecified
+12157 I69     0 Sequelae of cerebrovascular disease                          Sequelae of cerebrovascular disease
+12302 I693    0 Sequelae of cerebral infarction                              Sequelae of cerebral infarction
+12331 I6935   0 Hemiplegia and hemiparesis following cerebral infarction     Hemiplegia and hemiparesis following cerebral infarction
+12332 I69351  1 Hemiplga following cerebral infrc aff right dominant side    Hemiplegia and hemiparesis following cerebral infarction affecting right dominant side
+12335 I69354  1 Hemiplga following cerebral infrc affecting left nondom side Hemiplegia and hemiparesis following cerebral infarction affecting left non-dominant side
+12344 I6939   0 Other sequelae of cerebral infarction                        Other sequelae of cerebral infarction
+12346 I69391  1 Dysphagia following cerebral infarction                      Dysphagia following cerebral infarction
+12446 I70     0 Atherosclerosis                                              Atherosclerosis
+12449 I702    0 Atherosclerosis of native arteries of the extremities        Atherosclerosis of native arteries of the extremities
+12456 I7021   0 Athscl native arteries of extremities w intermittent claud   Atherosclerosis of native arteries of extremities with intermittent claudication
+12459 I70213  1 Athscl native arteries of extrm w intrmt claud, bi legs      Atherosclerosis of native arteries of extremities with intermittent claudication, bilateral legs
+12468 I7023   0 Atherosclerosis of native arteries of right leg w ulceration Atherosclerosis of native arteries of right leg with ulceration
+12471 I70233  1 Athscl native arteries of right leg w ulceration of ankle    Atherosclerosis of native arteries of right leg with ulceration of ankle
+12918 I82     0 Other venous embolism and thrombosis                         Other venous embolism and thrombosis
+12932 I824    0 Acute embolism and thrombosis of deep veins of low extrm     Acute embolism and thrombosis of deep veins of lower extremity
+12938 I8241   0 Acute embolism and thrombosis of femoral vein                Acute embolism and thrombosis of femoral vein
+12940 I82412  1 Acute embolism and thrombosis of left femoral vein           Acute embolism and thrombosis of left femoral vein
+12983 I825    0 Chronic embolism and thrombosis of deep veins of low extrm   Chronic embolism and thrombosis of deep veins of lower extremity
+12989 I8251   0 Chronic embolism and thrombosis of femoral vein              Chronic embolism and thrombosis of femoral vein
+12991 I82512  1 Chronic embolism and thrombosis of left femoral vein         Chronic embolism and thrombosis of left femoral vein
+13182 I85     0 Esophageal varices                                           Esophageal varices
+13183 I850    0 Esophageal varices                                           Esophageal varices
+13184 I8500   1 Esophageal varices without bleeding                          Esophageal varices without bleeding
+13263 I95     0 Hypotension                                                  Hypotension
+13265 I951    1 Orthostatic hypotension                                      Orthostatic hypotension
+13475 J30     0 Vasomotor and allergic rhinitis                              Vasomotor and allergic rhinitis
+13483 J309    1 Allergic rhinitis, unspecified                               Allergic rhinitis, unspecified
+13559 J43     0 Emphysema                                                    Emphysema
+13562 J432    1 Centrilobular emphysema                                      Centrilobular emphysema
+13564 J439    1 Emphysema, unspecified                                       Emphysema, unspecified
+13565 J44     0 Other chronic obstructive pulmonary disease                  Other chronic obstructive pulmonary disease
+13567 J441    1 Chronic obstructive pulmonary disease w (acute) exacerbation Chronic obstructive pulmonary disease with (acute) exacerbation
+13571 J449    1 Chronic obstructive pulmonary disease, unspecified           Chronic obstructive pulmonary disease, unspecified
+13576 J45     0 Asthma                                                       Asthma
+13585 J454    0 Moderate persistent asthma                                   Moderate persistent asthma
+13586 J4540   1 Moderate persistent asthma, uncomplicated                    Moderate persistent asthma, uncomplicated
+13589 J455    0 Severe persistent asthma                                     Severe persistent asthma
+13590 J4550   1 Severe persistent asthma, uncomplicated                      Severe persistent asthma, uncomplicated
+13591 J4551   1 Severe persistent asthma with (acute) exacerbation           Severe persistent asthma with (acute) exacerbation
+13662 J82     0 Pulmonary eosinophilia, not elsewhere classified             Pulmonary eosinophilia, not elsewhere classified
+13663 J828    0 Pulmonary eosinophilia, not elsewhere classified             Pulmonary eosinophilia, not elsewhere classified
+13666 J8283   1 Eosinophilic asthma                                          Eosinophilic asthma
+13668 J84     0 Other interstitial pulmonary diseases                        Other interstitial pulmonary diseases
+13674 J841    0 Other interstitial pulmonary diseases with fibrosis          Other interstitial pulmonary diseases with fibrosis
+13675 J8410   1 Pulmonary fibrosis, unspecified                              Pulmonary fibrosis, unspecified
+13676 J8411   0 Idiopathic interstitial pneumonia                            Idiopathic interstitial pneumonia
+13678 J84112  1 Idiopathic pulmonary fibrosis                                Idiopathic pulmonary fibrosis
+13772 J96     0 Respiratory failure, not elsewhere classified                Respiratory failure, not elsewhere classified
+13773 J960    0 Acute respiratory failure                                    Acute respiratory failure
+13775 J9601   1 Acute respiratory failure with hypoxia                       Acute respiratory failure with hypoxia
+13777 J961    0 Chronic respiratory failure                                  Chronic respiratory failure
+13779 J9611   1 Chronic respiratory failure with hypoxia                     Chronic respiratory failure with hypoxia
+13780 J9612   1 Chronic respiratory failure with hypercapnia                 Chronic respiratory failure with hypercapnia
+14006 K11     0 Diseases of salivary glands                                  Diseases of salivary glands
+14018 K117    1 Disturbances of salivary secretion                           Disturbances of salivary secretion
+14065 K21     0 Gastro-esophageal reflux disease                             Gastro-esophageal reflux disease
+14069 K219    1 Gastro-esophageal reflux disease without esophagitis         Gastro-esophageal reflux disease without esophagitis
+14502 K59     0 Other functional intestinal disorders                        Other functional intestinal disorders
+14503 K590    0 Constipation                                                 Constipation
+14509 K5909   1 Other constipation                                           Other constipation
+14676 K74     0 Fibrosis and cirrhosis of liver                              Fibrosis and cirrhosis of liver
+14686 K746    0 Other and unspecified cirrhosis of liver                     Other and unspecified cirrhosis of liver
+14687 K7460   1 Unspecified cirrhosis of liver                               Unspecified cirrhosis of liver
+15507 L89     0 Pressure ulcer                                               Pressure ulcer
+15533 L891    0 Pressure ulcer of back                                       Pressure ulcer of back
+15574 L8915   0 Pressure ulcer of sacral region                              Pressure ulcer of sacral region
+15577 L89152  1 Pressure ulcer of sacral region, stage 2                     Pressure ulcer of sacral region, stage 2
+15578 L89153  1 Pressure ulcer of sacral region, stage 3                     Pressure ulcer of sacral region, stage 3
+15579 L89154  1 Pressure ulcer of sacral region, stage 4                     Pressure ulcer of sacral region, stage 4
+15755 L97     0 Non-pressure chronic ulcer of lower limb, NEC                Non-pressure chronic ulcer of lower limb, not elsewhere classified
+15868 L975    0 Non-pressure chronic ulcer of other part of foot             Non-pressure chronic ulcer of other part of foot
+15878 L9751   0 Non-pressure chronic ulcer of other part of right foot       Non-pressure chronic ulcer of other part of right foot
+15880 L97512  1 Non-prs chronic ulcer oth prt right foot w fat layer exposed Non-pressure chronic ulcer of other part of right foot with fat layer exposed
+15886 L97519  1 Non-prs chronic ulcer oth prt right foot w unsp severity     Non-pressure chronic ulcer of other part of right foot with unspecified severity
+16735 M06     0 Other rheumatoid arthritis                                   Other rheumatoid arthritis
+16868 M069    1 Rheumatoid arthritis, unspecified                            Rheumatoid arthritis, unspecified
+24965 N18     0 Chronic kidney disease (CKD)                                 Chronic kidney disease (CKD)
+24968 N183    0 Chronic kidney disease, stage 3 (moderate)                   Chronic kidney disease, stage 3 (moderate)
+24969 N1830   1 Chronic kidney disease, stage 3 unspecified                  Chronic kidney disease, stage 3 unspecified
+24970 N1831   1 Chronic kidney disease, stage 3a                             Chronic kidney disease, stage 3a
+24971 N1832   1 Chronic kidney disease, stage 3b                             Chronic kidney disease, stage 3b
+24972 N184    1 Chronic kidney disease, stage 4 (severe)                     Chronic kidney disease, stage 4 (severe)
+24973 N185    1 Chronic kidney disease, stage 5                              Chronic kidney disease, stage 5
+24974 N186    1 End stage renal disease                                      End stage renal disease
+24975 N189    1 Chronic kidney disease, unspecified                          Chronic kidney disease, unspecified
+24989 N25     0 Disorders resulting from impaired renal tubular function     Disorders resulting from impaired renal tubular function
+24992 N258    0 Oth disorders resulting from impaired renal tubular function Other disorders resulting from impaired renal tubular function
+24993 N2581   1 Secondary hyperparathyroidism of renal origin                Secondary hyperparathyroidism of renal origin
+25039 N31     0 Neuromuscular dysfunction of bladder, NEC                    Neuromuscular dysfunction of bladder, not elsewhere classified
+25044 N319    1 Neuromuscular dysfunction of bladder, unspecified            Neuromuscular dysfunction of bladder, unspecified
+30649 R13     0 Aphagia and dysphagia                                        Aphagia and dysphagia
+30651 R131    0 Dysphagia                                                    Dysphagia
+30654 R1312   1 Dysphagia, oropharyngeal phase                               Dysphagia, oropharyngeal phase
+31117 R56     0 Convulsions, not elsewhere classified                        Convulsions, not elsewhere classified
+31122 R569    1 Unspecified convulsions                                      Unspecified convulsions
+85551 T86     0 Complications of transplanted organs and tissue              Complications of transplanted organs and tissue
+85558 T861    0 Complications of kidney transplant                           Complications of kidney transplant
+85560 T8611   1 Kidney transplant rejection                                  Kidney transplant rejection
+96592 Z17     0 Estrogen, and other hormones and factors receptor status     Estrogen, and other hormones and factors receptor status
+96593 Z170    1 Estrogen receptor positive status [ER+]                      Estrogen receptor positive status [ER+]
+97297 Z68     0 Body mass index [BMI]                                        Body mass index [BMI]
+97321 Z684    0 Body mass index [BMI] 40 or greater, adult                   Body mass index [BMI] 40 or greater, adult
+97322 Z6841   1 Body mass index [BMI] 40.0-44.9, adult                       Body mass index [BMI] 40.0-44.9, adult
+97323 Z6842   1 Body mass index [BMI] 45.0-49.9, adult                       Body mass index [BMI] 45.0-49.9, adult
+97481 Z79     0 Long term (current) drug therapy                             Long term (current) drug therapy
+97482 Z790    0 Long term (current) use of antocoag/antithrom/angiplate      Long term (current) use of anticoagulants and antithrombotics/antiplatelets
+97483 Z7901   1 Long term (current) use of anticoagulants                    Long term (current) use of anticoagulants
+97488 Z794    1 Long term (current) use of insulin                           Long term (current) use of insulin
+97492 Z796    0 Long term (crnt) use of immunomodulator & immunosuppressant  Long term (current) use of immunomodulators and immunosuppressants
+97495 Z7962   0 Long term (current) use of immunosuppressant                 Long term (current) use of immunosuppressant
+97497 Z79621  1 Long term (current) use of calcineurin inhibitor             Long term (current) use of calcineurin inhibitor
+97508 Z7969   1 Lng trm (crnt) use of immunomodulator & immunosuppressant    Long term (current) use of other immunomodulators and immunosuppressants
+97509 Z798    0 Other long term (current) drug therapy                       Other long term (current) drug therapy
+97510 Z7981   0 Lng trm (crnt) use of agnt aff estrog recpt & estrog levels  Long term (current) use of agents affecting estrogen receptors and estrogen levels
+97511 Z79810  1 Lng trm (crnt) use of slctv estrog receptor modulators       Long term (current) use of selective estrogen receptor modulators (SERMs)
+97516 Z7984   1 Long term (current) use of oral hypoglycemic drugs           Long term (current) use of oral hypoglycemic drugs
+97518 Z7989   0 Other long term (current) drug therapy                       Other long term (current) drug therapy
+97521 Z79899  1 Other long term (current) drug therapy                       Other long term (current) drug therapy
+97603 Z85     0 Personal history of malignant neoplasm                       Personal history of malignant neoplasm
+97604 Z850    0 Personal history of malignant neoplasm of digestive organs   Personal history of malignant neoplasm of digestive organs
+97610 Z8503   0 Personal history of malignant neoplasm of large intestine    Personal history of malignant neoplasm of large intestine
+97612 Z85038  1 Personal history of malignant neoplasm of large intestine    Personal history of other malignant neoplasm of large intestine
+97622 Z851    0 Personal history of malig neoplm of trachea, bronc and lung  Personal history of malignant neoplasm of trachea, bronchus and lung
+97623 Z8511   0 Personal history of malignant neoplasm of bronchus and lung  Personal history of malignant neoplasm of bronchus and lung
+97625 Z85118  1 Personal history of malignant neoplasm of bronchus and lung  Personal history of other malignant neoplasm of bronchus and lung
+97635 Z853    1 Personal history of malignant neoplasm of breast             Personal history of malignant neoplasm of breast
+97636 Z854    0 Personal history of malignant neoplasm of genital organs     Personal history of malignant neoplasm of genital organs
+97643 Z8546   1 Personal history of malignant neoplasm of prostate           Personal history of malignant neoplasm of prostate
+97683 Z86     0 Personal history of certain other diseases                   Personal history of certain other diseases
+97725 Z867    0 Personal history of diseases of the circulatory system       Personal history of diseases of the circulatory system
+97726 Z8671   0 Personal history of venous thrombosis and embolism           Personal history of venous thrombosis and embolism
+97727 Z86711  1 Personal history of pulmonary embolism                       Personal history of pulmonary embolism
+97730 Z8673   1 Prsnl hx of TIA (TIA), and cereb infrc w/o resid deficits    Personal history of transient ischemic attack (TIA), and cerebral infarction without residual deficits
+97813 Z89     0 Acquired absence of limb                                     Acquired absence of limb
+97849 Z894    0 Acquired absence of toe(s), foot, and ankle                  Acquired absence of toe(s), foot, and ankle
+97850 Z8941   0 Acquired absence of great toe                                Acquired absence of great toe
+97851 Z89411  1 Acquired absence of right great toe                          Acquired absence of right great toe
+97866 Z895    0 Acquired absence of leg below knee                           Acquired absence of leg below knee
+97867 Z8951   0 Acquired absence of leg below knee                           Acquired absence of leg below knee
+97868 Z89511  1 Acquired absence of right leg below knee                     Acquired absence of right leg below knee
+98027 Z93     0 Artificial opening status                                    Artificial opening status
+98029 Z931    1 Gastrostomy status                                           Gastrostomy status
+98041 Z94     0 Transplanted organ and tissue status                         Transplanted organ and tissue status
+98042 Z940    1 Kidney transplant status                                     Kidney transplant status
+98057 Z95     0 Presence of cardiac and vascular implants and grafts         Presence of cardiac and vascular implants and grafts
+98063 Z955    1 Presence of coronary angioplasty implant and graft           Presence of coronary angioplasty implant and graft
+98064 Z958    0 Presence of other cardiac and vascular implants and grafts   Presence of other cardiac and vascular implants and grafts
+98065 Z9581   0 Presence of other cardiac implants and grafts                Presence of other cardiac implants and grafts
+98066 Z95810  1 Presence of automatic (implantable) cardiac defibrillator    Presence of automatic (implantable) cardiac defibrillator
+98067 Z95811  1 Presence of heart assist device                              Presence of heart assist device
+98074 Z96     0 Presence of other functional implants                        Presence of other functional implants
+98083 Z964    0 Presence of endocrine implants                               Presence of endocrine implants
+98084 Z9641   1 Presence of insulin pump (external) (internal)               Presence of insulin pump (external) (internal)
+98172 Z99     0 Dependence on enabling machines and devices, NEC             Dependence on enabling machines and devices, not elsewhere classified
+98174 Z991    0 Dependence on respirator                                     Dependence on respirator
+98175 Z9911   1 Dependence on respirator [ventilator] status                 Dependence on respirator [ventilator] status
+98177 Z992    1 Dependence on renal dialysis                                 Dependence on renal dialysis
+98179 Z998    0 Dependence on other enabling machines and devices            Dependence on other enabling machines and devices
+98180 Z9981   1 Dependence on supplemental oxygen                            Dependence on supplemental oxygen

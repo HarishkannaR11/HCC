@@ -22,17 +22,24 @@ file names follow the same pattern with the year and model substituted.
 
 ## The fixture
 
-`data/fixtures/py2026/` is a small subset in exactly the same file formats:
-92 ICD-10-CM codes (with their headers), 38 map rows and 45 HCCs, forming 11
-complete hierarchy groups. It covers every code in the seed charts plus the
-hierarchy cases the tests need, including the HCC180/182/253 partial order. It
-exists so tests and local development run without the large official files.
-Values come from public copies of the PY2026 V28 tables and agree with the
-Phase 0 live verification (E11.9 → HCC38 0.166, I50.32 → HCC226 0.36,
-C50.912 age split at 50).
+`data/fixtures/py2026/` is a strict subset of the official files, with every
+line copied verbatim: 376 ICD-10-CM codes (177 billable, each with its chain of
+category headers), 128 crosswalk rows and 84 HCCs, forming 25 complete
+hierarchy groups. It covers every key and distractor code of every seed chart,
+plus the hierarchy cases the tests need, including the HCC180/182/253 partial
+order. It exists so tests and local development run without the large official
+files.
 
 ```bash
 npm run db:seed:fixture
+```
+
+After adding or changing a seed chart, regenerate it from the official files in
+`data/raw` (it keeps what is there and adds what the charts need, with whole
+hierarchy groups so trimming matches production):
+
+```bash
+npm run data:fixture
 ```
 
 ## Shape of the PY2026 V28 data
