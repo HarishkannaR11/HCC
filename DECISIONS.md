@@ -175,3 +175,9 @@ reasoning each. Newest phase at the bottom.
 - **Multiple sclerosis uses the FY2026 type-specific codes (G35.A), so that chart is dated after 10/01/2025.**
 - **The fixture is now generated (`npm run data:fixture`) as a verbatim subset of the official files with complete hierarchy groups**, instead of being hand-assembled. It covers every seed chart, and it can't drift from production values.
 
+## Access for new accounts
+
+- **New accounts get full access by default (owner's decision).** Migration 0013 adds `profiles.complimentary_access`, which defaults to true and is counted in `has_full_access`. The free tier, paywall and billing code stay in place for any account without it.
+- **The switch is the column default.** To start charging new sign-ups, run `alter table public.profiles alter column complimentary_access set default false;`. Existing accounts keep their grant until it is revoked. Learners can't change the flag, because their only column grant on profiles is `full_name`.
+- **`/billing` shows "Full access · included with your account" and offers no plans** to an account with the grant.
+

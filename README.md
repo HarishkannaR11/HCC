@@ -10,7 +10,8 @@ claims no affiliation with any credentialing body.
 
 **Status:** Phase 4 (monetization) complete: five free charts, then a
 subscription through a merchant of record (Lemon Squeezy), with signed,
-idempotent webhooks and a `/billing` page. Before it: Phase 3 (dashboard,
+idempotent webhooks and a `/billing` page. For now every new account gets full
+access by default (migration 0013; one-line switch in `DECISIONS.md`). Before it: Phase 3 (dashboard,
 streaks, weak spots, timed mode) and Phase 2 (encoder, deterministic scoring
 with V28 hierarchy trimming, result screen). See `DECISIONS.md` for choices
 and deviations, and `CLAUDE.md` for the build plan.

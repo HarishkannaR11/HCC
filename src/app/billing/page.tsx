@@ -40,6 +40,9 @@ export default async function BillingPage({ searchParams }: PageProps<"/billing"
   const provider = billingProvider();
   const now = new Date();
   const subscribed = subscriptionGrantsAccess(sub ?? null, now);
+  // Full access without a subscription or admin role: the account-level grant
+  // that new accounts receive while paid plans are off (migration 0013).
+  const complimentary = user.role !== "admin" && !subscribed && ent.full_access;
   const error = typeof params.error === "string" ? ERRORS[params.error] : undefined;
   const planName = sub?.plan === "annual" ? "Annual" : sub?.plan === "monthly" ? "Monthly" : (sub?.plan ?? "");
 
@@ -63,6 +66,13 @@ export default async function BillingPage({ searchParams }: PageProps<"/billing"
         <section className="flex flex-col gap-3 rounded-card border border-border bg-surface p-5" aria-label="Your plan">
           {user.role === "admin" ? (
             <p className="m-0 text-[15px]">Admin account: full access to every chart.</p>
+          ) : complimentary ? (
+            <>
+              <p className="m-0 text-[15px]">
+                <b>Full access</b> · included with your account
+              </p>
+              <p className="m-0 text-[13px] text-muted">Every chart in the library is open to you. No payment is needed.</p>
+            </>
           ) : subscribed && sub ? (
             <>
               <p className="m-0 text-[15px]">
@@ -109,7 +119,7 @@ export default async function BillingPage({ searchParams }: PageProps<"/billing"
           )}
         </section>
 
-        {user.role !== "admin" && !subscribed ? (
+        {user.role !== "admin" && !subscribed && !complimentary ? (
           provider ? (
             <section className="grid gap-4 sm:grid-cols-2" aria-label="Plans">
               {PLAN_IDS.map((plan) => (

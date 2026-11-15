@@ -584,6 +584,7 @@ export type Database = {
       };
       profiles: {
         Row: {
+          complimentary_access: boolean;
           created_at: string;
           full_name: string | null;
           id: string;
@@ -592,6 +593,7 @@ export type Database = {
         };
         ComputedFields: never;
         Insert: {
+          complimentary_access?: boolean;
           created_at?: string;
           full_name?: string | null;
           id: string;
@@ -599,6 +601,7 @@ export type Database = {
           timezone?: string;
         };
         Update: {
+          complimentary_access?: boolean;
           created_at?: string;
           full_name?: string | null;
           id?: string;

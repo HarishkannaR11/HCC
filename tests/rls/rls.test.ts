@@ -8,6 +8,8 @@
  *
  * Phase 4 adds the paywall: five free charts, then a subscription, decided in
  * Postgres and applied from billing events that only the server can write.
+ * New accounts get full access by default (0013); the paywall tests use an
+ * account with that grant switched off.
  *
  * Runs against the local stack through the same public endpoints a browser
  * uses. Creates its own users and charts and removes them afterwards.
@@ -590,6 +592,10 @@ describe("free tier, subscriptions and billing events (Phase 4)", () => {
     const signIn = await client.auth.signInWithPassword({ email, password });
     if (signIn.error) throw signIn.error;
     payer = { id: data.user.id, client };
+    // New accounts get full access by default (0013); this learner is on the
+    // free tier so the paywall and billing paths are exercised.
+    const freeTier = await service.from("profiles").update({ complimentary_access: false }).eq("id", payer.id);
+    if (freeTier.error) throw freeTier.error;
 
     for (let i = 0; i < 7; i++) {
       const chart = await service.from("charts").insert(chartFields(`RLS library ${i} ${run}`)).select("id").single();
@@ -610,6 +616,19 @@ describe("free tier, subscriptions and billing events (Phase 4)", () => {
     for (const id of charts) await service.from("charts").delete().eq("id", id);
     if (eventIds.length > 0) await service.from("billing_events").delete().in("id", eventIds);
     if (payer.id) await service.auth.admin.deleteUser(payer.id);
+  });
+
+  it("gives a new account full access by default, which the learner can neither remove nor grant", async () => {
+    const { data: profile } = await service.from("profiles").select("complimentary_access").eq("id", users.otherLearner.id).single();
+    expect(profile?.complimentary_access).toBe(true);
+    expect((await users.otherLearner.client.rpc("my_entitlement")).data?.[0]?.full_access).toBe(true);
+    expect((await users.otherLearner.client.rpc("chart_access", { p_chart_id: charts[6] })).data).toBe(true);
+
+    const remove = await users.otherLearner.client.from("profiles").update({ complimentary_access: false }).eq("id", users.otherLearner.id);
+    expect(remove.error?.code).toBe("42501");
+    const grant = await payer.client.from("profiles").update({ complimentary_access: true }).eq("id", payer.id);
+    expect(grant.error?.code).toBe("42501");
+    expect((await payer.client.rpc("my_entitlement")).data?.[0]?.full_access).toBe(false);
   });
 
   it("opens any five distinct charts free, then no new one, in the chart text as well as attempts", async () => {
@@ -734,7 +753,7 @@ describe("free tier, subscriptions and billing events (Phase 4)", () => {
       p_subscription: { provider_subscription_id: "forged", plan: "monthly", status: "active", current_period_end: inDays(365).toISOString() },
     });
     expect(forged.error?.code).toBe("42501");
-    expect((await users.learner.client.rpc("chart_access", { p_chart_id: charts[6] })).data).toBe(true); // a free slot, not the forgery
+    // The forged event changed nothing: no subscription row was written.
     expect((await service.from("subscriptions").select("user_id").eq("user_id", users.learner.id)).data).toEqual([]);
 
     const ledger = await payer.client.from("billing_events").select("id").limit(1);
